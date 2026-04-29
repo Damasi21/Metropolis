@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Parâmetros | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0">Parâmetros</h4>
+                </div>
+
+                <div class="row g-4 align-items-stretch">
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="fw-bold mb-3">Integração Omie</h5>
+                                <p class="text-muted mb-4">
+                                    Salve primeiro as credenciais da empresa. Depois, use a sincronizacao para buscar cadastros e lancamentos na API e gravar tudo no banco.
+                                </p>
+
+                                <form method="post" id="formCredenciais">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="salvar_credenciais">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">App Key</label>
+                                        {{ form_parametros.app_key_omie }}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">App Secret</label>
+                                        {{ form_parametros.app_secret_omie }}
+                                    </div>
+
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="submit" class="btn btn-primary px-4" id="btnSalvarCredenciais">
+                                            Salvar Key e Secret
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <hr class="my-4">
+
+                                <div>
+                                    <h6 class="fw-bold mb-2">Sincronizacao de dados</h6>
+                                    <p class="text-muted mb-3">
+                        
+                                    </p>
+
+                                    <form
+                                        method="post"
+                                        id="formSincronizacaoOmie"
+                                        data-start-url="{% url 'iniciar_sincronizacao_omie' slug=slug %}"
+                                        data-status-url-template="{% url 'status_sincronizacao_omie' slug=slug task_id='__TASK_ID__' %}"
+                                    >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="sincronizar_omie">
+
+                                        <button type="submit" class="btn btn-outline-primary px-4" id="btnSincronizarOmie">
+                                            Atualizar cadastros e lancamentos
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="mt-4 d-none" id="blocoLoadingSincronizacao">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <span class="text-muted" id="textoStatusSincronizacao">Sincronizando cadastros e lancamentos da Omie e gravando no banco...</span>
+                                    </div>
+
+                                    <div class="progress" style="height: 20px;">
+                                        <div
+                                            class="progress-bar progress-bar-striped progress-bar-animated"
+                                            role="progressbar"
+                                            id="barraProgressoSincronizacao"
+                                            style="width: 0%;"
+                                            aria-valuenow="0"
+                                            aria-valuemin="0"
+                                            aria-valuemax="100"
+                                        >
+                                            0%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 d-flex flex-column gap-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="fw-bold mb-3">Cadastro de Contas do DRE</h5>
+                                <p class="text-muted mb-4">
+                                    Cadastre e organize a estrutura hierárquica do DRE em até 3 níveis,
+                                    definindo também se cada conta será positiva ou negativa.
+                                </p>
+
+                                <div class="mt-auto">
+                                    <a href="{% url 'contas_dre' slug=slug %}" class="btn btn-success px-4">
+                                        Abrir Estrutura do DRE
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-bold">Plano de contas / De-Para</h6>
+                                <p class="text-muted mb-3">
+                                    Aqui você poderá relacionar cada categoria importada com uma conta do DRE.
+                                </p>
+
+                                <a href="{% url 'depara_categoria_dre' slug=slug %}" class="btn btn-outline-primary">
+                                    Abrir De/Para
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-bold">Indicadores</h6>
+                                <p class="text-muted mb-3">
+                                    Defina quais contas DRE marcadas como KPI serão usadas na composição dos indicadores.
+                                </p>
+
+                                <a href="{% url 'indicadores' slug=slug %}" class="btn btn-outline-primary">
+                                    Abrir Indicadores
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% include 'modais/modais.html' %}
+            <script src="{% static 'js/parametros.js' %}?v=20260422b"></script>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

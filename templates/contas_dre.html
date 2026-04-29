@@ -1,0 +1,293 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contas do DRE | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}secondary{% endif %} alert-dismissible fade show mb-4" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h4 class="fw-bold mb-1">Cadastro de Contas do DRE</h4>
+                        <p class="text-muted mb-0">Estrutura hierárquica com até {{ limite_niveis_dre }} níveis.</p>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-dark" disabled title="Em breve">
+                            Importar Planilha
+                        </button>
+
+                        <a href="{% url 'parametros_empresa' slug=slug %}" class="btn btn-outline-secondary">
+                            Voltar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-3">
+                                    {% if conta_edicao %}Editar Conta{% else %}Nova Conta{% endif %}
+                                </h5>
+
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger" role="alert">
+                                        {% for erro in form.non_field_errors %}
+                                            <div>{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <form method="post">
+                                    {% csrf_token %}
+
+                                    {% if conta_edicao %}
+                                        <input type="hidden" name="conta_id" value="{{ conta_edicao.id }}">
+                                    {% endif %}
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.nome.id_for_label }}">Nome da conta</label>
+                                        {{ form.nome }}
+                                        {% for erro in form.nome.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.pai.id_for_label }}">Conta pai</label>
+                                        {{ form.pai }}
+                                        <div class="form-text">
+                                            Deixe em branco para criar uma conta principal.
+                                        </div>
+                                        {% for erro in form.pai.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.sinal.id_for_label }}">Sinal</label>
+                                        {{ form.sinal }}
+                                        {% for erro in form.sinal.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mb-3" id="bloco-formula" style="display: none;">
+                                        <label class="form-label" for="{{ form.contas_formula.id_for_label }}">Contas da fórmula</label>
+                                        {{ form.contas_formula }}
+                                        <div class="form-text">
+                                            A primeira conta será a base do cálculo e as demais serão subtraídas.
+                                        </div>
+                                        {% for erro in form.contas_formula.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.ordem.id_for_label }}">Ordem</label>
+                                        {{ form.ordem }}
+                                        {% for erro in form.ordem.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        {{ form.kpi }}
+                                        <label class="form-check-label" for="{{ form.kpi.id_for_label }}">KPI</label>
+                                        {% for erro in form.kpi.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        {{ form.ativo }}
+                                        <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Conta ativa</label>
+                                        {% for erro in form.ativo.errors %}
+                                            <div class="text-danger small mt-1">{{ erro }}</div>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if conta_edicao %}
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-warning w-100">
+                                                Atualizar Conta
+                                            </button>
+
+                                            <a href="{% url 'contas_dre' slug=slug %}" class="btn btn-outline-secondary w-100">
+                                                Cancelar edição
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            Salvar Conta
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-3">Estrutura em Árvore</h5>
+
+                                {% if contas_raiz %}
+                                    <div class="dre-tree">
+                                        {% for conta_pai in contas_raiz %}
+                                            <div class="mb-3">
+                                                <div class="border rounded p-3 bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>
+                                                                {% if conta_pai.sinal == 'positivo' %}
+                                                                    <span class="text-primary fw-bold">(+)</span>
+                                                                {% elif conta_pai.sinal == 'negativo' %}
+                                                                    <span class="text-danger fw-bold">(-)</span>
+                                                                {% elif conta_pai.sinal == 'resultado' %}
+                                                                    <span class="text-dark fw-bold">(=)</span>
+                                                                {% endif %}
+                                                                {{ conta_pai.nome }}
+                                                            </strong>
+                                                            <span class="text-muted ms-2">Nível 1</span>
+                                                        </div>
+
+                                                        <div class="d-flex gap-2 align-items-center">
+                                                            <a href="{% url 'mover_conta_dre' slug=slug id=conta_pai.id direcao='cima' %}"
+                                                               class="btn btn-sm btn-light border fw-bold px-2"
+                                                               title="Mover para cima"
+                                                               style="font-size: 16px;">
+                                                                <img src="{% static 'imagens/acima.png' %}" alt="Mover para cima" style="width: 16px; height: 16px;">
+                                                            </a>
+
+                                                            <a href="{% url 'mover_conta_dre' slug=slug id=conta_pai.id direcao='baixo' %}"
+                                                               class="btn btn-sm btn-light border fw-bold px-2"
+                                                               title="Mover para baixo"
+                                                               style="font-size: 16px;">
+                                                                <img src="{% static 'imagens/abaixo.png' %}" alt="Mover para baixo" style="width: 16px; height: 16px;">
+                                                            </a>
+
+                                                            <a href="{% url 'contas_dre' slug=slug %}?editar={{ conta_pai.id }}"
+                                                               class="btn btn-sm btn-outline-secondary"
+                                                               title="Editar">
+                                                                <img src="{% static 'imagens/editar.png' %}" alt="Editar" style="width: 16px; height: 16px;">
+                                                            </a>
+
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modalExcluir"
+                                                                    data-id="{{ conta_pai.id }}"
+                                                                    data-slug="{{ slug }}"
+                                                                    aria-label="Excluir conta">
+                                                                X
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {% if conta_pai.filhos.all %}
+                                                        <div class="mt-3 ms-4 border-start ps-3">
+                                                            {% for conta_filho in conta_pai.filhos.all %}
+                                                                <div class="mb-3">
+                                                                    <div class="border rounded p-3 bg-white">
+                                                                        <div class="d-flex justify-content-between align-items-center">
+                                                                            <div>
+                                                                                <strong>
+                                                                                    {% if conta_filho.sinal == 'positivo' %}
+                                                                                        (+)
+                                                                                    {% elif conta_filho.sinal == 'negativo' %}
+                                                                                        (-)
+                                                                                    {% elif conta_filho.sinal == 'resultado' %}
+                                                                                        (=)
+                                                                                    {% endif %}
+                                                                                    {{ conta_filho.nome }}
+                                                                                </strong>
+                                                                                <span class="text-muted ms-2">Nível 2</span>
+                                                                            </div>
+
+                                                                            <div class="d-flex gap-2 align-items-center">
+                                                                                <a href="{% url 'mover_conta_dre' slug=slug id=conta_filho.id direcao='cima' %}"
+                                                                                   class="btn btn-sm btn-light border fw-bold px-2"
+                                                                                   title="Mover para cima"
+                                                                                   style="font-size: 16px;">
+                                                                                    <img src="{% static 'imagens/acima.png' %}" alt="Mover para cima" style="width: 16px; height: 16px;">
+                                                                                </a>
+
+                                                                                <a href="{% url 'mover_conta_dre' slug=slug id=conta_filho.id direcao='baixo' %}"
+                                                                                   class="btn btn-sm btn-light border fw-bold px-2"
+                                                                                   title="Mover para baixo"
+                                                                                   style="font-size: 16px;">
+                                                                                    <img src="{% static 'imagens/abaixo.png' %}" alt="Mover para baixo" style="width: 16px; height: 16px;">
+                                                                                </a>
+
+                                                                                <a href="{% url 'contas_dre' slug=slug %}?editar={{ conta_filho.id }}"
+                                                                                   class="btn btn-sm btn-outline-secondary"
+                                                                                   title="Editar">
+                                                                                    <img src="{% static 'imagens/editar.png' %}" alt="Editar" style="width: 16px; height: 16px;">
+                                                                                </a>
+
+                                                                                <button type="button"
+                                                                                        class="btn btn-sm btn-outline-danger"
+                                                                                        data-bs-toggle="modal"
+                                                                                        data-bs-target="#modalExcluir"
+                                                                                        data-id="{{ conta_filho.id }}"
+                                                                                        data-slug="{{ slug }}"
+                                                                                        aria-label="Excluir conta">
+                                                                                    X
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-0">Nenhuma conta cadastrada ainda.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<script src="{% static 'js/parametros.js' %}"></script>
+
+{% endblock %}

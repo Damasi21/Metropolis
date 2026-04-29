@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load filtros %}
+
+{% block title %}De/Para | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">De/Para de Categorias x Contas DRE</h4>
+                        <p class="text-muted mb-0">
+                            Relacione cada categoria com a respectiva conta do DRE.
+                        </p>
+                    </div>
+
+                    <div class="depara-acoes">
+                        <a href="{% url 'exportar_planilha_depara' slug=slug %}" class="btn btn-outline-primary">
+                            Exportar planilha
+                        </a>
+
+                        <form
+                            method="post"
+                            enctype="multipart/form-data"
+                            class="d-inline-flex align-items-stretch"
+                        >
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="importar_planilha">
+                            <input
+                                type="file"
+                                id="planilhaDeParaInput"
+                                name="planilha_depara"
+                                class="d-none"
+                                accept=".xlsx"
+                            >
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary btn-upload"
+                                data-planilha-trigger="planilhaDeParaInput"
+                            >
+                                Importar planilha
+                            </button>
+                        </form>
+
+                        <a href="{% url 'parametros_empresa' slug=slug %}" class="btn btn-outline-secondary">
+                            Voltar
+                        </a>
+                    </div>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}secondary{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 20%;">Código</th>
+                                            <th style="width: 40%;">Categoria</th>
+                                            <th style="width: 40%;">Conta DRE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in categorias %}
+                                            {% with categoria=item.obj %}
+                                            <tr class="
+                                                {% if item.tipo == 'receita' and item.eh_pai %}linha-receita-pai
+                                                {% elif item.tipo == 'receita' %}linha-receita
+                                                {% elif item.tipo == 'despesa' and item.eh_pai %}linha-despesa-pai
+                                                {% elif item.tipo == 'despesa' %}linha-despesa
+                                                {% elif item.eh_pai %}linha-neutra-pai
+                                                {% else %}linha-neutra
+                                                {% endif %}
+                                            ">
+                                                <td>{{ categoria.codigo }}</td>
+
+                                                <td>
+                                                    <div class="{% if item.eh_pai %}fw-bold{% else %}fw-semibold{% endif %}">
+                                                        {{ categoria.descricao }}
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    {% if item.eh_pai %}
+                                                        <span class="badge bg-secondary-subtle text-dark border">
+                                                            Conta totalizadora
+                                                        </span>
+                                                    {% else %}
+                                                        <select
+                                                            name="conta_categoria_{{ categoria.id }}"
+                                                            class="form-select"
+                                                        >
+                                                            <option value="">Selecione uma conta DRE</option>
+                                                            {% for conta in contas_dre %}
+                                                                <option
+                                                                    value="{{ conta.id }}"
+                                                                    {% if mapeamentos|get_item:categoria.id == conta.id %}selected{% endif %}
+                                                                >
+                                                                    {{ conta.nome }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endwith %}
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-4">
+                                                    Nenhuma categoria encontrada.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary px-4">
+                            Salvar De/Para
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% include 'modais/modais.html' %}
+<script src="{% load static %}{% static 'js/parametros.js' %}?v=20260424a"></script>
+{% endblock %}

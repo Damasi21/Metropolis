@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações | Metrópolis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Configurações das Empresas</h2>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Voltar</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="mb-3">Cadastrar Empresa</h4>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Nome da Empresa</label>
+                            {{ form.nome }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slug</label>
+                            {{ form.slug }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Logotipo</label>
+                            {{ form.logo }}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.ativo }}
+                            <label class="form-check-label">Empresa ativa</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="mb-3">Empresas cadastradas</h4>
+
+                    <div class="row g-3">
+                        {% for empresa in empresas %}
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 text-center bg-light">
+                                    <h5>{{ empresa.nome }}</h5>
+
+                                    {% if empresa.logo %}
+                                        <img src="{{ empresa.logo.url }}" alt="{{ empresa.nome }}" class="img-fluid my-3" style="max-height: 80px;">
+                                    {% else %}
+                                        <p class="text-muted my-3">Sem logotipo</p>
+                                    {% endif %}
+
+                                    <small class="text-muted">{{ empresa.slug }}</small>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">Nenhuma empresa cadastrada ainda.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

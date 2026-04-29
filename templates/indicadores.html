@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Indicadores | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h4 class="fw-bold mb-1">Indicadores</h4>
+                        <p class="text-muted mb-0">
+                            Selecione as contas DRE marcadas como KPI para compor cada indicador.
+                        </p>
+                    </div>
+
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn btn-outline-secondary">
+                        Voltar
+                    </a>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="vstack gap-4">
+                                {% for indicador in indicadores_config %}
+                                    <div class="row align-items-center g-3 border-bottom pb-4 {% if forloop.last %}border-0 pb-0{% endif %}">
+                                        <div class="col-lg-4">
+                                            <label class="fw-semibold mb-0">{{ indicador.titulo }}</label>
+                                            {% if indicador.formula_legenda %}
+                                                <div class="small text-muted mt-1">{{ indicador.formula_legenda }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-lg-8">
+                                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                {% for campo in indicador.campos %}
+                                                    <div>
+                                                        <div class="small text-muted mb-1">{{ campo.label }}</div>
+                                                        <select
+                                                            class="form-select"
+                                                            style="max-width: 280px;"
+                                                            name="{{ indicador.chave }}__{{ campo.nome }}"
+                                                        >
+                                                            <option value="">Selecione uma conta DRE</option>
+                                                            {% for conta in contas_kpi %}
+                                                                <option value="{{ conta.id }}" {% if campo.valor == conta.id %}selected{% endif %}>
+                                                                    {{ conta.nome }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    {% if campo.operador_apos %}
+                                                        <span class="fw-bold fs-5 text-secondary">{{ campo.operador_apos }}</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-muted">
+                                        Nenhum indicador configurado.
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            Salvar indicadores
+                        </button>
+                    </div>
+                </form>
+
+                {% if not contas_kpi %}
+                    <div class="alert alert-warning mt-4 mb-0">
+                        Nenhuma conta DRE com a opção KPI marcada foi encontrada.
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

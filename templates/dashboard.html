@@ -1,0 +1,261 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Dashboard | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn active">Resultado</a>
+                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                {% include 'topo_dashboard.html' with titulo_topo='Resultado' tipo_visualizacao=tipo_visualizacao %}
+
+                <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-5">
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <small>Receita Bruta</small>
+                                <h5 class="{% if kpis.receita_bruta != '-' and kpis.receita_bruta|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.receita_bruta }}</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <small>Deduções e Gastos Variáveis</small>
+                                <h5 class="{% if kpis.deducoes_gastos_variaveis != '-' and kpis.deducoes_gastos_variaveis|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.deducoes_gastos_variaveis }}</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <small class="text-nowrap">Margem de Contribuição</small>
+                                <h5 class="{% if kpis.margem_contribuicao != '-' and kpis.margem_contribuicao|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.margem_contribuicao }}</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <small>Gastos Fixos</small>
+                                <h5 class="{% if kpis.gastos_fixos != '-' and kpis.gastos_fixos|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.gastos_fixos }}</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <small>EBIT</small>
+                                <h5 class="{% if kpis.ebit != '-' and kpis.ebit|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.ebit }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body p-0">
+                        <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-2 flex-wrap gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <h5 class="fw-bold mb-1">DRE Gerencial</h5>
+                                <div class="d-flex gap-2 dre-acoes-nivel">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="dreExpandAllBtn">
+                                        Expandir
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="dreCollapseAllBtn">
+                                        Encolher
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                class="titulo-toggle d-flex align-items-center gap-2 dre-toggle-btn"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#painelDreTabela"
+                                aria-expanded="true"
+                                aria-controls="painelDreTabela"
+                            >
+                                <span>Encolher tabela do DRE</span>
+                                <span class="fs-6">v</span>
+                            </button>
+                        </div>
+
+                        <div class="collapse show" id="painelDreTabela">
+                            <div class="dre-scroll-top" id="dreScrollTop">
+                                <div class="dre-scroll-top-inner" id="dreScrollTopInner"></div>
+                            </div>
+
+                            <div class="table-responsive" id="dreTableWrapper">
+                                <table class="table table-bordered align-middle mb-0 tabela-dre">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 320px;">Grupo / Categoria</th>
+                                            {% for mes in meses_dre %}
+                                                <th colspan="3" class="text-center">{{ mes.rotulo }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            {% for mes in meses_dre %}
+                                                <th>Realizado</th>
+                                                <th>AV %</th>
+                                                <th>AH %</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for linha in dre %}
+                                            <tr
+                                                class="{% if linha.nivel == 1 and linha.sinal == 'resultado' %}linha-resultado{% elif linha.nivel == 1 %}linha-pai{% elif linha.nivel == 2 %}linha-filho{% elif linha.nivel == 3 %}linha-categoria{% else %}linha-cliente-fornecedor{% endif %}"
+                                                data-row-id="{{ linha.id }}"
+                                                {% if linha.parent_id %}data-parent-id="{{ linha.parent_id }}"{% endif %}
+                                                {% if linha.parent_id %}style="display: none;"{% endif %}
+                                            >
+                                                <td class="{% if linha.nivel == 2 %}ps-4{% elif linha.nivel == 3 %}ps-5{% elif linha.nivel == 4 %}ps-6{% endif %}">
+                                                    {% if linha.possui_filhos %}
+                                                        <button
+                                                            type="button"
+                                                            class="dre-row-toggle"
+                                                            data-target-id="{{ linha.id }}"
+                                                            aria-expanded="{% if linha.expandido %}true{% else %}false{% endif %}"
+                                                        >
+                                                            <span class="dre-row-toggle-icon">{% if linha.expandido %}-{% else %}+{% endif %}</span>
+                                                        </button>
+                                                    {% else %}
+                                                        <span class="dre-row-toggle dre-row-toggle-placeholder"></span>
+                                                    {% endif %}
+                                                    {% if linha.prefixo %}
+                                                        <span class="me-2">{{ linha.prefixo }}</span>
+                                                    {% endif %}
+                                                    {{ linha.nome }}
+                                                </td>
+                                                {% for mes in linha.meses %}
+                                                    <td class="{% if mes.realizado != '-' and mes.realizado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.realizado }}</td>
+                                                    <td class="{% if mes.av != '-' and mes.av|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.av }}</td>
+                                                    <td class="{% if mes.ah != '-' and mes.ah|slice:':1' == '-' %}valor-negativo{% endif %}">
+                                                        <span class="dre-ah-valor">
+                                                            {{ mes.ah }}
+                                                            {% if mes.ah_direcao == 'alta' %}
+                                                                <span class="dre-ah-seta dre-ah-seta-alta" aria-label="Alta em relacao ao mes anterior"></span>
+                                                            {% elif mes.ah_direcao == 'baixa' %}
+                                                                <span class="dre-ah-seta dre-ah-seta-baixa" aria-label="Baixa em relacao ao mes anterior"></span>
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="{{ dre_colspan }}" class="text-center text-muted py-4">
+                                                    Nenhuma conta DRE ativa encontrada para montar a estrutura.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1">
+                    <div class="col-lg-6">
+                        <div class="card card-grafico dre-grafico-card h-100">
+                            <div class="dre-grafico-topbar">
+                                <select class="form-select dre-grafico-select" id="dreContaPaiSelect">
+                                    {% for conta in grafico_contas_pai_dre %}
+                                        <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <div class="dre-grafico-resumo">
+                                    <div class="dre-grafico-metrica">
+                                        <span class="dre-grafico-metrica-label">Média mensal</span>
+                                        <strong id="dreGraficoMediaMensal">-</strong>
+                                    </div>
+                                </div>
+
+                                <div class="dre-grafico-plot" id="dreGraficoPlot">
+                                    <div class="dre-grafico-vazio text-muted">Nenhuma conta pai disponível para o gráfico.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card card-grafico variacao-mensal-card h-100">
+                            <div class="card-body">
+                                <h6 class="variacao-mensal-titulo" id="variacaoMensalTitulo">{{ grafico_variacao_mensal.titulo }}</h6>
+
+                                {% if grafico_variacao_mensal.colunas %}
+                                    <div class="variacao-mensal-plot" id="variacaoMensalPlot" style="--variacao-colunas: {{ grafico_variacao_mensal.colunas|length }};" aria-label="Variacao mensal da {{ grafico_variacao_mensal.conta }}">
+                                        <div class="variacao-mensal-eixo"></div>
+
+                                        {% for coluna in grafico_variacao_mensal.colunas %}
+                                            <div class="variacao-mensal-coluna">
+                                                <div class="variacao-mensal-metade variacao-mensal-metade-superior">
+                                                    {% if coluna.direcao == 'alta' %}
+                                                        <span class="variacao-mensal-valor">{{ coluna.percentual }}</span>
+                                                        <span class="variacao-mensal-seta variacao-mensal-seta-alta"></span>
+                                                        <span class="variacao-mensal-barra variacao-mensal-barra-positiva" style="height: {{ coluna.altura }}%;"></span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="variacao-mensal-metade variacao-mensal-metade-inferior">
+                                                    {% if coluna.direcao == 'baixa' %}
+                                                        <span class="variacao-mensal-barra variacao-mensal-barra-negativa" style="height: {{ coluna.altura }}%;"></span>
+                                                        <span class="variacao-mensal-valor">{{ coluna.percentual }}</span>
+                                                        <span class="variacao-mensal-seta variacao-mensal-seta-baixa"></span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <span class="variacao-mensal-rotulo">{{ coluna.rotulo }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if grafico_variacao_mensal.ano %}
+                                        <div class="variacao-mensal-ano" id="variacaoMensalAno">{{ grafico_variacao_mensal.ano }}</div>
+                                    {% else %}
+                                        <div class="variacao-mensal-ano" id="variacaoMensalAno"></div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="dre-grafico-vazio text-muted" id="variacaoMensalPlot">
+                                        Nenhum dado de AH encontrado para Receita Bruta Operacional.
+                                    </div>
+                                    <div class="variacao-mensal-ano" id="variacaoMensalAno"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+</div>
+
+{{ grafico_contas_pai_dre|json_script:"dre-contas-pai-data" }}
+{% endblock %}

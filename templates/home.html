@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Empresas | Metrópolis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Grupos de relatórios</h2>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control" placeholder="Pesquisar">
+            <a href="{% url 'configuracoes_empresas' %}" class="btn btn-dark">
+                Configurações
+            </a>
+        </div>
+
+    </div>
+
+    <div class="row g-4">
+        {% for empresa in empresas %}
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm card-empresa">
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-4">{{ empresa.nome }}</h5>
+                        {% if empresa.logo %}
+                            <img src="{{ empresa.logo.url }}" alt="{{ empresa.nome }}" class="img-fluid mb-4" style="max-height: 80px;">
+                        {% else %}
+                            <p class="text-muted mb-4">Sem logo</p>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'dashboard_empresa' empresa.slug %}" class="btn btn-outline-primary">
+                        Dashboards
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
