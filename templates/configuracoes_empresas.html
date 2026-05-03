@@ -6,7 +6,10 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold">Configurações das Empresas</h2>
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Voltar</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'usuarios_empresa' %}" class="btn btn-outline-primary">Usuários</a>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Voltar</a>
+        </div>
     </div>
 
     <div class="row g-4">
@@ -55,11 +58,13 @@
                                 <div class="border rounded p-3 h-100 text-center bg-light">
                                     <h5>{{ empresa.nome }}</h5>
 
-                                    {% if empresa.logo %}
-                                        <img src="{{ empresa.logo.url }}" alt="{{ empresa.nome }}" class="img-fluid my-3" style="max-height: 80px;">
-                                    {% else %}
-                                        <p class="text-muted my-3">Sem logotipo</p>
-                                    {% endif %}
+                                    <a href="{% url 'usuarios_empresa' %}" class="empresa-logo-link" title="Gerenciar usuários">
+                                        {% if empresa.logo %}
+                                            <img src="{{ empresa.logo.url }}" alt="{{ empresa.nome }}" class="img-fluid my-3" style="max-height: 80px;">
+                                        {% else %}
+                                            <span class="text-muted d-block my-3">Sem logotipo</span>
+                                        {% endif %}
+                                    </a>
 
                                     <small class="text-muted">{{ empresa.slug }}</small>
                                 </div>

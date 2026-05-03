@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuários | Metrópolis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Usuários</h2>
+            <p class="text-muted mb-0">Gerencie quem pode acessar o sistema.</p>
+        </div>
+        <a href="{% url 'configuracoes_empresas' %}" class="btn btn-outline-secondary">Voltar</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="mb-3">{% if usuario_editando %}Editar usuário{% else %}Incluir usuário{% endif %}</h4>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            {{ form.first_name }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Sobrenome</label>
+                            {{ form.last_name }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Senha</label>
+                            {{ form.password1 }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar senha</label>
+                            {{ form.password2 }}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.is_active }}
+                            <label class="form-check-label">Usuário ativo</label>
+                        </div>
+
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <small class="text-danger d-block">{{ error }}</small>
+                            {% endfor %}
+                        {% endfor %}
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            {% if usuario_editando %}
+                                <a href="{% url 'usuarios_empresa' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="mb-3">Usuários cadastrados</h4>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                    <tr>
+                                        <td>{{ usuario.get_full_name|default:'-' }}</td>
+                                        <td>{{ usuario.email }}</td>
+                                        <td>
+                                            {% if usuario.is_active %}
+                                                <span class="badge text-bg-success">Ativo</span>
+                                            {% else %}
+                                                <span class="badge text-bg-secondary">Inativo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'editar_usuario_empresa' usuario.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                            <form method="post" action="{% url 'excluir_usuario_empresa' usuario.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">Nenhum usuário cadastrado.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

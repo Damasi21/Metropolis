@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inicializarMenuLateral();
     inicializarModalExclusao();
     inicializarModalMensagem();
+    inicializarSenhaVisivel();
     inicializarFiltroPeriodo();
     inicializarDashboardResultado();
     inicializarDashboardVisaoGeral();
@@ -54,6 +55,40 @@ function inicializarModalMensagem() {
 
     const modal = new bootstrap.Modal(modalMensagem);
     modal.show();
+}
+
+function inicializarSenhaVisivel() {
+    const inputs = document.querySelectorAll('input[type="password"]');
+
+    inputs.forEach(function (input) {
+        if (input.parentElement && input.parentElement.classList.contains('senha-toggle-wrap')) {
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'senha-toggle-wrap';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'senha-toggle-btn';
+        button.setAttribute('aria-label', 'Mostrar senha');
+        button.innerHTML = `
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        `;
+        wrapper.appendChild(button);
+
+        button.addEventListener('click', function () {
+            const mostrar = input.type === 'password';
+            input.type = mostrar ? 'text' : 'password';
+            button.classList.toggle('senha-visivel', mostrar);
+            button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+        });
+    });
 }
 
 function inicializarFiltroPeriodo() {

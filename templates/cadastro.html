@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro | Metrópolis{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <section class="auth-panel">
+        <h1>Cadastre-se no <strong>Metrópolis</strong></h1>
+        <p class="auth-subtitle">Crie seu usuário para acessar o sistema.</p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {{ form.first_name }}
+            {{ form.last_name }}
+            {{ form.email }}
+            {{ form.password1 }}
+            {{ form.password2 }}
+
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+            {% endfor %}
+
+            <button type="submit" class="auth-submit">Cadastrar</button>
+        </form>
+
+        <a href="{% url 'login' %}" class="auth-register-link">Já tenho cadastro</a>
+    </section>
+</div>
+{% endblock %}
