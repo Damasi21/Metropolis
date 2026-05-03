@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inicializarMenuLateral();
     inicializarModalExclusao();
     inicializarModalMensagem();
+    inicializarFiltroPeriodo();
     inicializarDashboardResultado();
     inicializarDashboardVisaoGeral();
 });
@@ -53,6 +54,122 @@ function inicializarModalMensagem() {
 
     const modal = new bootstrap.Modal(modalMensagem);
     modal.show();
+}
+
+function inicializarFiltroPeriodo() {
+    const trees = document.querySelectorAll('[data-periodo-tree]');
+
+    trees.forEach(function (tree) {
+        const form = tree.closest('form');
+        const input = form ? form.querySelector('[data-periodo-input]') : null;
+        const trigger = tree.querySelector('[data-periodo-trigger]');
+        const menu = tree.querySelector('[data-periodo-menu]');
+        const options = Array.from(tree.querySelectorAll('[data-periodo-value]'));
+
+        if (!form || !input || !trigger || !menu || !options.length) {
+            return;
+        }
+
+        function fecharMenu() {
+            tree.classList.remove('periodo-tree-open');
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function abrirMenu() {
+            tree.classList.add('periodo-tree-open');
+            trigger.setAttribute('aria-expanded', 'true');
+        }
+
+        function alternarGrupo(nivel, ano, trimestre) {
+            const selector = nivel === 'ano'
+                ? `[data-periodo-nivel="trimestre"][data-periodo-ano="${ano}"]`
+                : `[data-periodo-nivel="mes"][data-periodo-ano="${ano}"][data-periodo-trimestre="${trimestre}"]`;
+            const filhos = Array.from(tree.querySelectorAll(selector));
+            const abrir = filhos.some(function (filho) {
+                return !filho.classList.contains('periodo-tree-visible');
+            });
+
+            filhos.forEach(function (filho) {
+                filho.classList.toggle('periodo-tree-visible', abrir);
+
+                if (!abrir && nivel === 'ano' && filho.dataset.periodoNivel === 'trimestre') {
+                    const meses = tree.querySelectorAll(
+                        `[data-periodo-nivel="mes"][data-periodo-ano="${ano}"][data-periodo-trimestre="${filho.dataset.periodoTrimestre}"]`
+                    );
+                    meses.forEach(function (mes) {
+                        mes.classList.remove('periodo-tree-visible');
+                    });
+                    const icon = filho.querySelector('.periodo-tree-icon');
+                    if (icon) {
+                        icon.textContent = '+';
+                    }
+                }
+            });
+        }
+
+        function selecionarPeriodo(option) {
+            input.value = option.dataset.periodoValue;
+            trigger.textContent = option.dataset.periodoValue === 'customizado'
+                ? 'Selecionar periodo'
+                : option.dataset.periodoLabel;
+
+            options.forEach(function (item) {
+                item.classList.remove('active');
+            });
+            option.classList.add('active');
+            fecharMenu();
+            form.submit();
+        }
+
+        trigger.addEventListener('click', function () {
+            if (tree.classList.contains('periodo-tree-open')) {
+                fecharMenu();
+                return;
+            }
+
+            abrirMenu();
+        });
+
+        options.forEach(function (option) {
+            const nivel = option.dataset.periodoNivel;
+
+            if (option.classList.contains('active')) {
+                if (nivel === 'trimestre' || nivel === 'mes') {
+                    tree.querySelectorAll(`[data-periodo-nivel="trimestre"][data-periodo-ano="${option.dataset.periodoAno}"]`).forEach(function (trimestre) {
+                        trimestre.classList.add('periodo-tree-visible');
+                    });
+                }
+
+                if (nivel === 'mes') {
+                    tree.querySelectorAll(`[data-periodo-nivel="mes"][data-periodo-ano="${option.dataset.periodoAno}"][data-periodo-trimestre="${option.dataset.periodoTrimestre}"]`).forEach(function (mes) {
+                        mes.classList.add('periodo-tree-visible');
+                    });
+                }
+            }
+
+            option.addEventListener('click', function (event) {
+                if (nivel === 'ano' || nivel === 'trimestre') {
+                    const icon = option.querySelector('.periodo-tree-icon');
+
+                    if (event.target.closest('.periodo-tree-icon')) {
+                        alternarGrupo(nivel, option.dataset.periodoAno, option.dataset.periodoTrimestre);
+                        if (icon) {
+                            icon.textContent = icon.textContent === '+' ? '-' : '+';
+                        }
+                        return;
+                    }
+                }
+
+                selecionarPeriodo(option);
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!tree.contains(event.target)) {
+                fecharMenu();
+            }
+        });
+    });
 }
 
 // Agrupa as interacoes da tela de resultado do DRE: scroll, colapso, linhas e grafico.

@@ -74,13 +74,43 @@
 
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">Período</label>
-                    <select class="form-select" name="periodo" onchange="this.form.submit()">
-                        {% for opcao in periodo_opcoes %}
-                            <option value="{{ opcao.valor }}" {% if opcao.valor == periodo_selecionado %}selected{% endif %}>
-                                {{ opcao.label }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="periodo" value="{{ periodo_selecionado }}" data-periodo-input>
+                    <div class="periodo-tree" data-periodo-tree>
+                        <button
+                            type="button"
+                            class="form-select periodo-tree-trigger"
+                            data-periodo-trigger
+                            aria-expanded="false"
+                        >
+                            {{ periodo_legenda }}
+                        </button>
+
+                        <div class="periodo-tree-menu" data-periodo-menu>
+                            {% for opcao in periodo_opcoes %}
+                                <button
+                                    type="button"
+                                    class="periodo-tree-option periodo-tree-option-{{ opcao.nivel }} {% if opcao.valor == periodo_selecionado %}active{% endif %}"
+                                    data-periodo-value="{{ opcao.valor }}"
+                                    data-periodo-label="{{ opcao.label }}"
+                                    data-periodo-nivel="{{ opcao.nivel }}"
+                                    {% if opcao.ano %}data-periodo-ano="{{ opcao.ano }}"{% endif %}
+                                    {% if opcao.trimestre %}data-periodo-trimestre="{{ opcao.trimestre }}"{% endif %}
+                                >
+                                    {% if opcao.nivel == 'customizado' %}
+                                        Selecionar periodo
+                                    {% elif opcao.nivel == 'ano' %}
+                                        <span class="periodo-tree-icon">+</span>
+                                        <span>{{ opcao.label }}</span>
+                                    {% elif opcao.nivel == 'trimestre' %}
+                                        <span class="periodo-tree-icon">+</span>
+                                        <span>{{ opcao.menu_label }}</span>
+                                    {% else %}
+                                        <span>{{ opcao.menu_label }}</span>
+                                    {% endif %}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
 

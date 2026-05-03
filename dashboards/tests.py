@@ -20,7 +20,29 @@ from .models import (
 from .forms import ContaDREForm
 from .omie import importar_clientes_fornecedores_omie
 from .omie import listar_contas_correntes_omie
-from .views import _construir_linhas_dre
+from .views import _construir_linhas_dre, _montar_opcoes_periodo, _resolver_meses_periodo
+
+
+class PeriodoDashboardTestCase(TestCase):
+    def test_periodo_usa_janela_de_cinco_anos_para_frente_e_para_tras(self):
+        ano_atual = date.today().year
+        opcoes = _montar_opcoes_periodo('data_emissao')
+        anos = [opcao['ano'] for opcao in opcoes if opcao.get('nivel') == 'ano']
+
+        self.assertEqual(anos[0], ano_atual - 5)
+        self.assertEqual(anos[-1], ano_atual + 5)
+        self.assertNotIn(2039, anos)
+        self.assertNotIn(2040, anos)
+
+    def test_periodo_mensal_resolve_apenas_o_mes_escolhido(self):
+        meses = _resolver_meses_periodo('mes:2026:04')
+
+        self.assertEqual(meses, [{
+            'codigo': '2026-04',
+            'ano': 2026,
+            'mes': 4,
+            'rotulo': 'Abril',
+        }])
 
 
 class DreHierarquiaTestCase(TestCase):
