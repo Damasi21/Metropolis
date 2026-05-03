@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | Metrópolis{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <section class="auth-panel">
+        <h1>Acesse o <strong>DataWise BI</strong></h1>
+        <p class="auth-subtitle">Acesse sua conta para continuar acompanhando seus dashboards.</p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {{ form.email }}
+            {{ form.password }}
+
+            <div class="auth-actions-row">
+                <label class="auth-remember">
+                    {{ form.remember_me }}
+                    <span>Lembrar senha</span>
+                </label>
+                <a href="{% url 'esqueci_senha' %}" class="auth-link">Esqueceu a senha?</a>
+            </div>
+
+            <button type="submit" class="auth-submit">Log In</button>
+        </form>
+
+        <a href="{% url 'cadastro_usuario' %}" class="auth-register-link">Ou cadastre-se</a>
+    </section>
+</div>
+{% endblock %}

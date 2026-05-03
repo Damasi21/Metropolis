@@ -23,6 +23,171 @@ body {
     transform: translateY(-4px);
 }
 
+.empresa-logo-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.empresa-logo-link:hover {
+    opacity: 0.86;
+}
+
+/* =========================
+   AUTENTICACAO
+========================= */
+
+.auth-page {
+    min-height: calc(100vh - 48px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f7;
+}
+
+.auth-panel {
+    width: min(100%, 540px);
+    padding: 28px 32px;
+}
+
+.auth-panel h1 {
+    margin-bottom: 14px;
+    color: #232a31;
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: 0;
+}
+
+.auth-panel h1 strong {
+    font-weight: 700;
+}
+
+.auth-subtitle {
+    max-width: 480px;
+    margin-bottom: 42px;
+    color: #9ca3af;
+    font-size: 21px;
+    line-height: 1.45;
+}
+
+.auth-form {
+    display: grid;
+    gap: 24px;
+}
+
+.auth-input {
+    width: 100%;
+    height: 54px;
+    padding-right: 42px;
+    border: 0;
+    border-bottom: 1px solid #c5cbd1;
+    border-radius: 0;
+    background: transparent;
+    color: #232a31;
+    font-size: 16px;
+    outline: 0;
+}
+
+.auth-input:focus {
+    border-bottom-color: #3ed3a4;
+}
+
+.auth-input::placeholder {
+    color: #9aa0a6;
+}
+
+.auth-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.auth-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: #737a82;
+    font-size: 16px;
+}
+
+.auth-check-input {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 5px;
+    accent-color: #3ed3a4;
+}
+
+.auth-link,
+.auth-register-link {
+    color: #737a82;
+    text-decoration: underline;
+}
+
+.auth-submit {
+    width: 100%;
+    height: 74px;
+    margin-top: 28px;
+    border: 0;
+    border-radius: 5px;
+    background: #3ed3a4;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.auth-submit:hover {
+    background: #34bd91;
+}
+
+.auth-register-link {
+    display: block;
+    margin-top: 22px;
+    text-align: center;
+}
+
+.senha-toggle-wrap {
+    position: relative;
+}
+
+.senha-toggle-wrap .auth-input,
+.senha-toggle-wrap .form-control {
+    padding-right: 44px;
+}
+
+.senha-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #7a838c;
+    transform: translateY(-50%);
+}
+
+.senha-toggle-btn:hover,
+.senha-toggle-btn.senha-visivel {
+    color: #0b6166;
+    background: #e8f4f2;
+}
+
+.senha-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 /* =========================
    NAVEGACAO LATERAL
 ========================= */
