@@ -161,10 +161,10 @@
                                 <h5 class="fw-bold mb-3">Estrutura em Árvore</h5>
 
                                 {% if contas_raiz %}
-                                    <div class="dre-tree">
+                                    <div class="dre-tree dre-sortable" data-reorder-url="{% url 'reordenar_contas_dre' slug=slug %}">
                                         {% for conta_pai in contas_raiz %}
-                                            <div class="mb-3">
-                                                <div class="border rounded p-3 bg-light">
+                                            <div class="mb-3 dre-tree-item" data-conta-id="{{ conta_pai.id }}">
+                                                <div class="border rounded p-3 bg-light dre-account-card">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div>
                                                             <strong>
@@ -180,21 +180,7 @@
                                                             <span class="text-muted ms-2">Nível 1</span>
                                                         </div>
 
-                                                        <div class="d-flex gap-2 align-items-center">
-                                                            <a href="{% url 'mover_conta_dre' slug=slug id=conta_pai.id direcao='cima' %}"
-                                                               class="btn btn-sm btn-light border fw-bold px-2"
-                                                               title="Mover para cima"
-                                                               style="font-size: 16px;">
-                                                                <img src="{% static 'imagens/acima.png' %}" alt="Mover para cima" style="width: 16px; height: 16px;">
-                                                            </a>
-
-                                                            <a href="{% url 'mover_conta_dre' slug=slug id=conta_pai.id direcao='baixo' %}"
-                                                               class="btn btn-sm btn-light border fw-bold px-2"
-                                                               title="Mover para baixo"
-                                                               style="font-size: 16px;">
-                                                                <img src="{% static 'imagens/abaixo.png' %}" alt="Mover para baixo" style="width: 16px; height: 16px;">
-                                                            </a>
-
+                                                        <div class="d-flex gap-2 align-items-center dre-actions">
                                                             <a href="{% url 'contas_dre' slug=slug %}?editar={{ conta_pai.id }}"
                                                                class="btn btn-sm btn-outline-secondary"
                                                                title="Editar">
@@ -214,10 +200,10 @@
                                                     </div>
 
                                                     {% if conta_pai.filhos.all %}
-                                                        <div class="mt-3 ms-4 border-start ps-3">
+                                                        <div class="mt-3 ms-4 border-start ps-3 dre-sortable">
                                                             {% for conta_filho in conta_pai.filhos.all %}
-                                                                <div class="mb-3">
-                                                                    <div class="border rounded p-3 bg-white">
+                                                                <div class="mb-3 dre-tree-item" data-conta-id="{{ conta_filho.id }}">
+                                                                    <div class="border rounded p-3 bg-white dre-account-card">
                                                                         <div class="d-flex justify-content-between align-items-center">
                                                                             <div>
                                                                                 <strong>
@@ -233,21 +219,7 @@
                                                                                 <span class="text-muted ms-2">Nível 2</span>
                                                                             </div>
 
-                                                                            <div class="d-flex gap-2 align-items-center">
-                                                                                <a href="{% url 'mover_conta_dre' slug=slug id=conta_filho.id direcao='cima' %}"
-                                                                                   class="btn btn-sm btn-light border fw-bold px-2"
-                                                                                   title="Mover para cima"
-                                                                                   style="font-size: 16px;">
-                                                                                    <img src="{% static 'imagens/acima.png' %}" alt="Mover para cima" style="width: 16px; height: 16px;">
-                                                                                </a>
-
-                                                                                <a href="{% url 'mover_conta_dre' slug=slug id=conta_filho.id direcao='baixo' %}"
-                                                                                   class="btn btn-sm btn-light border fw-bold px-2"
-                                                                                   title="Mover para baixo"
-                                                                                   style="font-size: 16px;">
-                                                                                    <img src="{% static 'imagens/abaixo.png' %}" alt="Mover para baixo" style="width: 16px; height: 16px;">
-                                                                                </a>
-
+                                                                            <div class="d-flex gap-2 align-items-center dre-actions">
                                                                                 <a href="{% url 'contas_dre' slug=slug %}?editar={{ conta_filho.id }}"
                                                                                    class="btn btn-sm btn-outline-secondary"
                                                                                    title="Editar">
@@ -288,6 +260,98 @@
     </div>
 </div>
 
+<style>
+    .dre-account-card {
+        cursor: grab;
+        transition: box-shadow .15s ease, transform .15s ease;
+    }
+
+    .dre-account-card:active {
+        cursor: grabbing;
+    }
+
+    .dre-actions {
+        cursor: default;
+    }
+
+    .dre-sortable-ghost .dre-account-card {
+        opacity: .45;
+    }
+
+    .dre-sortable-chosen .dre-account-card {
+        box-shadow: 0 .75rem 1.5rem rgba(0, 0, 0, .12);
+    }
+
+    .dre-sortable-drag .dre-account-card {
+        transform: rotate(.5deg);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="{% static 'js/parametros.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sortableContainers = document.querySelectorAll('.dre-sortable');
+        const rootContainer = document.querySelector('.dre-tree[data-reorder-url]');
+        const reorderUrl = rootContainer ? rootContainer.dataset.reorderUrl : null;
+
+        if (!window.Sortable || !reorderUrl) {
+            return;
+        }
+
+        function getCookie(name) {
+            const cookies = document.cookie ? document.cookie.split(';') : [];
+            for (const cookie of cookies) {
+                const trimmedCookie = cookie.trim();
+                if (trimmedCookie.startsWith(`${name}=`)) {
+                    return decodeURIComponent(trimmedCookie.substring(name.length + 1));
+                }
+            }
+            return '';
+        }
+
+        function salvarOrdem(container) {
+            const contas = Array.from(container.children)
+                .filter(function (item) {
+                    return item.classList.contains('dre-tree-item');
+                })
+                .map(function (item) {
+                    return item.dataset.contaId;
+                });
+
+            fetch(reorderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ contas: contas }),
+            }).then(function (response) {
+                if (!response.ok) {
+                    window.location.reload();
+                }
+            }).catch(function () {
+                window.location.reload();
+            });
+        }
+
+        sortableContainers.forEach(function (container) {
+            new Sortable(container, {
+                animation: 150,
+                draggable: '.dre-tree-item',
+                filter: '.dre-actions, .dre-actions *',
+                ghostClass: 'dre-sortable-ghost',
+                chosenClass: 'dre-sortable-chosen',
+                dragClass: 'dre-sortable-drag',
+                preventOnFilter: false,
+                onEnd: function (event) {
+                    if (event.oldIndex !== event.newIndex) {
+                        salvarOrdem(event.to);
+                    }
+                },
+            });
+        });
+    });
+</script>
 
 {% endblock %}

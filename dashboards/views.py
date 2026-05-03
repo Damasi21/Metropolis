@@ -1,16 +1,19 @@
 from calendar import monthrange
 from datetime import date
+import json
 from threading import Thread
 import unicodedata
 from uuid import uuid4
 
 from django.contrib import messages
 from django.core.cache import cache
+from django.db import transaction
 from django.db import OperationalError, ProgrammingError
 from django.db import close_old_connections
 from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
@@ -1604,6 +1607,44 @@ def excluir_conta_dre(request, slug, id):
             messages.success(request, 'Conta DRE excluída com sucesso.')
 
     return redirect('contas_dre', slug=slug)
+
+
+#-------------------------------------------------------------------------------
+
+@require_POST
+def reordenar_contas_dre(request, slug):
+    get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'ok': False, 'mensagem': 'Dados invalidos.'}, status=400)
+
+    conta_ids = payload.get('contas') or []
+    if not isinstance(conta_ids, list) or not conta_ids:
+        return JsonResponse({'ok': False, 'mensagem': 'Lista de contas invalida.'}, status=400)
+
+    try:
+        conta_ids = [int(conta_id) for conta_id in conta_ids]
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'mensagem': 'Lista de contas invalida.'}, status=400)
+
+    contas = list(ContaDRE.objects.filter(id__in=conta_ids, ativo=True).select_related('pai'))
+    if len(contas) != len(set(conta_ids)):
+        return JsonResponse({'ok': False, 'mensagem': 'Conta nao encontrada.'}, status=404)
+
+    contas_por_id = {conta.id: conta for conta in contas}
+    primeira_conta = contas_por_id[conta_ids[0]]
+    pai_id = primeira_conta.pai_id
+
+    if any(conta.pai_id != pai_id for conta in contas):
+        return JsonResponse({'ok': False, 'mensagem': 'Reordene apenas contas do mesmo nivel.'}, status=400)
+
+    with transaction.atomic():
+        for indice, conta_id in enumerate(conta_ids, start=1):
+            ContaDRE.objects.filter(id=conta_id).update(ordem=indice)
+
+    return JsonResponse({'ok': True})
 
 
 #-------------------------------------------------------------------------------
