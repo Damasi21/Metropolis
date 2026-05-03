@@ -10,6 +10,7 @@ from .views import (
     indicadores,
     exportar_planilha_depara,
     iniciar_sincronizacao_omie,
+    reordenar_contas_dre,
     status_sincronizacao_omie,
 )
 
@@ -25,5 +26,6 @@ urlpatterns = [
     path('<slug:slug>/parametros/contas-dre/excluir/<int:id>/', excluir_conta_dre, name='excluir_conta_dre'),
     path('<slug:slug>/parametros/de-para/', depara_categoria_dre, name='depara_categoria_dre'),
     path('<slug:slug>/parametros/de-para/exportar/', exportar_planilha_depara, name='exportar_planilha_depara'),
+    path('<slug:slug>/parametros/contas-dre/reordenar/', reordenar_contas_dre, name='reordenar_contas_dre'),
     path('<slug:slug>/parametros/contas-dre/mover/<int:id>/<str:direcao>/', mover_conta_dre, name='mover_conta_dre'),
 ]
