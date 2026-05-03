@@ -74,6 +74,87 @@ body {
     color: #1f2d2d;
 }
 
+.periodo-tree {
+    position: relative;
+}
+
+.periodo-tree-trigger {
+    min-height: 38px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.periodo-tree-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 320px;
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid #d7dfdc;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+.periodo-tree-open .periodo-tree-menu {
+    display: block;
+}
+
+.periodo-tree-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #1f2d2d;
+    font-size: 14px;
+    text-align: left;
+}
+
+.periodo-tree-option:hover,
+.periodo-tree-option.active {
+    background: #e8f4f2;
+    color: #0b6166;
+}
+
+.periodo-tree-option-trimestre,
+.periodo-tree-option-mes {
+    display: none;
+}
+
+.periodo-tree-option-trimestre.periodo-tree-visible,
+.periodo-tree-option-mes.periodo-tree-visible {
+    display: flex;
+}
+
+.periodo-tree-option-trimestre {
+    padding-left: 28px;
+}
+
+.periodo-tree-option-mes {
+    padding-left: 54px;
+}
+
+.periodo-tree-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #0b6166;
+    cursor: pointer;
+    font-weight: 700;
+}
+
 /* =========================
    KPIS E RESUMOS
 ========================= */

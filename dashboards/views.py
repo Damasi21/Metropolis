@@ -307,19 +307,35 @@ def _obter_anos_disponiveis(campo_data):
 
 
 def _montar_opcoes_periodo(campo_data):
-    anos = _obter_anos_disponiveis(campo_data)
-    opcoes = [{'valor': 'customizado', 'label': 'Selecionar período'}]
+    ano_atual = date.today().year
+    anos = range(ano_atual - 5, ano_atual + 6)
+    opcoes = [{'valor': 'customizado', 'label': 'Selecionar periodo', 'nivel': 'customizado'}]
 
     for ano in anos:
-        opcoes.append({'valor': f'ano:{ano}', 'label': f'Ano {ano}'})
+        opcoes.append({'valor': f'ano:{ano}', 'label': str(ano), 'nivel': 'ano', 'ano': ano})
 
         for trimestre, meses in TRIMESTRES.items():
             inicio = MESES_LABELS[meses[0]][:3]
             fim = MESES_LABELS[meses[-1]][:3]
             opcoes.append({
                 'valor': f'tri:{ano}:T{trimestre}',
-                'label': f'{ano} - {trimestre}o trimestre ({inicio} a {fim})',
+                'label': f'{ano} - T{trimestre} ({inicio} a {fim})',
+                'menu_label': f'T{trimestre} ({inicio} a {fim})',
+                'nivel': 'trimestre',
+                'ano': ano,
+                'trimestre': trimestre,
             })
+
+            for mes in meses:
+                opcoes.append({
+                    'valor': f'mes:{ano}:{mes:02d}',
+                    'label': f'{MESES_LABELS[mes]} {ano}',
+                    'menu_label': MESES_LABELS[mes],
+                    'nivel': 'mes',
+                    'ano': ano,
+                    'trimestre': trimestre,
+                    'mes': mes,
+                })
 
     vistos = set()
     opcoes_unicas = []
@@ -390,6 +406,17 @@ def _remover_mes_referencia_ah(dre):
 def _resolver_meses_periodo(periodo_selecionado, data_inicial=None, data_final=None):
     hoje = date.today()
     meses = []
+
+    if periodo_selecionado.startswith('mes:'):
+        _, ano_str, mes_str = periodo_selecionado.split(':')
+        ano = int(ano_str)
+        mes = int(mes_str)
+        return [{
+            'codigo': f'{ano}-{mes:02d}',
+            'ano': ano,
+            'mes': mes,
+            'rotulo': MESES_LABELS[mes],
+        }]
 
     if periodo_selecionado.startswith('tri:'):
         _, ano_str, trimestre_str = periodo_selecionado.split(':')
