@@ -522,7 +522,16 @@ class ParametrosOmieViewTestCase(TestCase):
             slug_empresa='empresa-omie',
             nome_empresa='Empresa Omie',
         )
-        self.url = reverse('parametros_empresa', kwargs={'slug': self.empresa.slug_empresa})
+        self.url = reverse('parametros_gerais', kwargs={'slug': self.empresa.slug_empresa})
+
+    def test_parametros_empresa_exibe_grupos_de_parametros(self):
+        response = self.client.get(
+            reverse('parametros_empresa', kwargs={'slug': self.empresa.slug_empresa})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Parâmetros gerais')
+        self.assertContains(response, 'Dashboard Resultado')
 
     @patch('dashboards.views.sincronizar_dados_omie')
     def test_salvar_credenciais_nao_dispara_sincronizacao(self, sincronizar_mock):

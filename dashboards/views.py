@@ -1390,6 +1390,28 @@ def dashboard_resultado(request, slug):
 def parametros_empresa(request, slug):
     empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
 
+    contexto = {
+        'slug': slug,
+        'empresa_nome': empresa.nome_empresa,
+        'empresa': empresa,
+    }
+    return render(request, 'parametros.html', contexto)
+
+
+def parametros_resultado(request, slug):
+    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+
+    contexto = {
+        'slug': slug,
+        'empresa_nome': empresa.nome_empresa,
+        'empresa': empresa,
+    }
+    return render(request, 'parametros_resultado.html', contexto)
+
+
+def parametros_gerais(request, slug):
+    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+
     modal_mensagem = None
     modal_tipo = None
 
@@ -1436,7 +1458,7 @@ def parametros_empresa(request, slug):
         'modal_mensagem': modal_mensagem,
         'modal_tipo': modal_tipo,
     }
-    return render(request, 'parametros.html', contexto)
+    return render(request, 'parametros_gerais.html', contexto)
 
 
 def iniciar_sincronizacao_omie(request, slug):
