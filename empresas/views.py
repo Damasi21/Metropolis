@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
+from dashboards.models import ParametroEmpresa
 from .forms import EmpresaForm
 from .models import Empresa
 from .user_forms import UsuarioEmpresaForm
@@ -13,7 +15,13 @@ def configuracoes_empresas(request):
 
     if request.method == 'POST':
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                empresa = form.save()
+                ParametroEmpresa.objects.update_or_create(
+                    slug_empresa=empresa.slug,
+                    defaults={'nome_empresa': empresa.nome},
+                )
+            messages.success(request, 'Empresa salva com sucesso.')
             return redirect('configuracoes_empresas')
 
     empresas = Empresa.objects.all().order_by('nome')
