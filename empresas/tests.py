@@ -24,3 +24,20 @@ class ConfiguracoesEmpresasTests(TestCase):
                 nome_empresa='Empresa Nova',
             ).exists()
         )
+
+    def test_dashboard_cria_parametros_se_empresa_ja_existir(self):
+        Empresa.objects.create(
+            nome='Empresa Legada',
+            slug='empresa-legada',
+            ativo=True,
+        )
+
+        response = self.client.get(reverse('dashboard_empresa', kwargs={'slug': 'empresa-legada'}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            ParametroEmpresa.objects.filter(
+                slug_empresa='empresa-legada',
+                nome_empresa='Empresa Legada',
+            ).exists()
+        )

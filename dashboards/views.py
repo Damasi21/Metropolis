@@ -19,6 +19,7 @@ from django.views.decorators.http import require_POST
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
+from empresas.models import Empresa as EmpresaCadastro
 from .forms import ContaDREForm, ParametroEmpresaForm
 from .models import (
     Categoria,
@@ -69,6 +70,19 @@ MESES_ABREVIADOS = {
     11: 'Nov',
     12: 'Dez',
 }
+
+
+def _get_parametro_empresa(slug):
+    empresa = ParametroEmpresa.objects.filter(slug_empresa__iexact=slug).first()
+    if empresa:
+        return empresa
+
+    empresa_cadastro = get_object_or_404(EmpresaCadastro, slug__iexact=slug)
+    empresa, _ = ParametroEmpresa.objects.update_or_create(
+        slug_empresa=empresa_cadastro.slug,
+        defaults={'nome_empresa': empresa_cadastro.nome},
+    )
+    return empresa
 
 TRIMESTRES = {
     1: (1, 2, 3),
@@ -1458,7 +1472,7 @@ def _adicionar_erros_formulario(request, form):
 
 
 def dashboard_empresa(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     periodo_contexto = _resolver_periodo_dashboard(request)
     dados_visao_geral = _montar_dados_visao_geral(
         periodo_contexto['meses_dre'],
@@ -1481,7 +1495,7 @@ def dashboard_empresa(request, slug):
 
 
 def dashboard_resultado(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     periodo_contexto = _resolver_periodo_dashboard(request)
     meses_dre_calculo = _adicionar_mes_referencia_ah(periodo_contexto['meses_dre'])
     dre = _remover_mes_referencia_ah(_construir_linhas_dre(
@@ -1520,7 +1534,7 @@ def dashboard_resultado(request, slug):
 
 
 def exportar_planilha_dre_projetado(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     periodo_contexto = _resolver_periodo_dashboard(request)
     ano = _resolver_ano_projetado(periodo_contexto['meses_dre'])
     meses_ano = _meses_ano_projetado(ano)
@@ -1582,7 +1596,7 @@ def exportar_planilha_dre_projetado(request, slug):
 
 @require_POST
 def importar_planilha_dre_projetado(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     arquivo = request.FILES.get('planilha_projetado')
     ano = int(request.POST.get('ano_projetado') or date.today().year)
     querystring = request.POST.get('querystring', '')
@@ -1677,7 +1691,7 @@ def importar_planilha_dre_projetado(request, slug):
 
 
 def dashboard_dre_projetado(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     periodo_contexto = _resolver_periodo_dashboard(request)
     ano_projetado = _resolver_ano_projetado(periodo_contexto['meses_dre'])
     meses_dre_calculo = _adicionar_mes_referencia_ah(periodo_contexto['meses_dre'])
@@ -1706,7 +1720,7 @@ def dashboard_dre_projetado(request, slug):
 #-------------------------------------------------------------------------------
 
 def parametros_empresa(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
 
     contexto = {
         'slug': slug,
@@ -1717,7 +1731,7 @@ def parametros_empresa(request, slug):
 
 
 def parametros_resultado(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
 
     contexto = {
         'slug': slug,
@@ -1728,7 +1742,7 @@ def parametros_resultado(request, slug):
 
 
 def parametros_gerais(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
 
     modal_mensagem = None
     modal_tipo = None
@@ -1783,7 +1797,7 @@ def iniciar_sincronizacao_omie(request, slug):
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'mensagem': 'Metodo nao permitido.'}, status=405)
 
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     if not empresa.app_key_omie or not empresa.app_secret_omie:
         return JsonResponse({
             'ok': False,
@@ -1799,7 +1813,7 @@ def iniciar_sincronizacao_omie(request, slug):
 
 
 def status_sincronizacao_omie(request, slug, task_id):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     status = _obter_status_sincronizacao(task_id)
 
     if not status or status.get('empresa_id') != empresa.id:
@@ -1811,7 +1825,7 @@ def status_sincronizacao_omie(request, slug, task_id):
 #-------------------------------------------------------------------------------
 
 def contas_dre(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
 
     conta_edicao = None
     conta_id = request.GET.get('editar')
@@ -1869,7 +1883,7 @@ def contas_dre(request, slug):
 #-------------------------------------------------------------------------------
 
 def indicadores(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
 
     contas_kpi = ContaDRE.objects.filter(
         ativo=True,
@@ -1936,7 +1950,7 @@ def indicadores(request, slug):
 #-------------------------------------------------------------------------------
 
 def excluir_conta_dre(request, slug, id):
-    get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    _get_parametro_empresa(slug)
     conta = get_object_or_404(ContaDRE, id=id)
 
     if request.method == 'POST':
@@ -1953,7 +1967,7 @@ def excluir_conta_dre(request, slug, id):
 
 @require_POST
 def reordenar_contas_dre(request, slug):
-    get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    _get_parametro_empresa(slug)
 
     try:
         payload = json.loads(request.body.decode('utf-8'))
@@ -2047,7 +2061,7 @@ def _montar_contexto_depara(empresa, slug, modal_mensagem=None, modal_tipo=None)
 
 
 def exportar_planilha_depara(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     categorias = _listar_categorias_depara()
     mapeamentos = {
         item.categoria_id: item.conta_dre.nome if item.conta_dre else ''
@@ -2087,7 +2101,7 @@ def exportar_planilha_depara(request, slug):
 
 
 def depara_categoria_dre(request, slug):
-    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    empresa = _get_parametro_empresa(slug)
     categorias = _listar_categorias_depara()
     contas_dre = _obter_contas_dre_depara()
 
