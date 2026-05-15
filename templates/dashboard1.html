@@ -15,7 +15,7 @@
                 <div class="d-grid gap-2 menu-lateral">
                     <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn active">Visao Geral</a>
                     <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
-                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
                     <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
                     <a href="#" class="btn menu-btn">Clientes</a>
                     <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn">Parametros</a>
@@ -38,7 +38,7 @@
                             <div class="row g-4 h-100">
 
                                 <div class="col-md-4">
-                                    <div class="card card-kpi">
+                                    <div class="card card-kpi indicador-tooltip" data-tooltip="Todas as receitas da empresa&#10;Origem: Contas a Receber" tabindex="0" aria-label="Recebimentos. Todas as receitas da empresa. Origem: Contas a Receber">
                                         <div class="card-body d-flex justify-content-between">
                                             <div>
                                                 <div class="kpi-titulo">Recebimentos</div>
@@ -52,7 +52,7 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <div class="card card-kpi">
+                                    <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
                                         <div class="card-body d-flex justify-content-between">
                                             <div>
                                                 <div class="kpi-titulo">Pagamentos</div>
@@ -66,7 +66,7 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <div class="card card-kpi">
+                                    <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
                                         <div class="card-body d-flex justify-content-between">
                                             <div>
                                                 <div class="kpi-titulo">Resultado</div>
@@ -114,12 +114,28 @@
                     <div class="row g-4 visao-geral-graficos">
 
                         <div class="col-xl-8">
-                            <div class="card card-grafico">
+                            <div class="card card-grafico visao-tempo-fullscreen-panel" id="visaoTempoFullscreenPanel">
                                 <div class="card-body">
-                                    <h5 class="fw-bold mb-3">Recebimentos e Pagamentos ao longo do tempo</h5>
-                                    <div class="grafico-legenda">
-                                        <span><i class="legenda-cor legenda-recebimentos"></i>Recebimentos</span>
-                                        <span><i class="legenda-cor legenda-pagamentos"></i>Pagamentos</span>
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                                        <div>
+                                            <h5 class="fw-bold mb-3">Recebimentos e Pagamentos ao longo do tempo</h5>
+                                            <div class="grafico-legenda mb-0">
+                                                <span><i class="legenda-cor legenda-recebimentos"></i>Recebimentos</span>
+                                                <span><i class="legenda-cor legenda-pagamentos"></i>Pagamentos</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            class="dre-fullscreen-btn"
+                                            type="button"
+                                            id="visaoTempoFullscreenBtn"
+                                            aria-label="Abrir grafico de recebimentos e pagamentos em tela cheia"
+                                            title="Tela cheia"
+                                        >
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                     <div class="visao-grafico-tempo" id="visaoGraficoTempo"></div>
                                 </div>

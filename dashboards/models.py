@@ -1385,3 +1385,59 @@ class IndicadorConfiguracao(models.Model):
 
     def __str__(self):
         return f'{self.empresa} - {self.get_chave_display()}'
+
+
+class DREProjetado(models.Model):
+    TIPO_LINHA_CHOICES = [
+        ('conta', 'Conta DRE'),
+        ('categoria', 'Categoria'),
+    ]
+
+    empresa = models.ForeignKey(
+        ParametroEmpresa,
+        on_delete=models.CASCADE,
+        related_name='projetados_dre',
+        verbose_name='Empresa',
+    )
+    conta_dre = models.ForeignKey(
+        ContaDRE,
+        on_delete=models.CASCADE,
+        related_name='projetados',
+        verbose_name='Conta DRE',
+    )
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='projetados_dre',
+        verbose_name='Categoria',
+    )
+    tipo_linha = models.CharField(
+        max_length=10,
+        choices=TIPO_LINHA_CHOICES,
+        verbose_name='Tipo de linha',
+    )
+    ano = models.PositiveSmallIntegerField(verbose_name='Ano')
+    mes = models.PositiveSmallIntegerField(verbose_name='Mes')
+    valor = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        verbose_name='Valor projetado',
+    )
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'DRE Projetado'
+        verbose_name_plural = 'DRE Projetado'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['empresa', 'tipo_linha', 'conta_dre', 'categoria', 'ano', 'mes'],
+                name='uniq_dre_projetado_linha_mes',
+            ),
+        ]
+        ordering = ['ano', 'mes', 'conta_dre__ordem', 'categoria__codigo']
+
+    def __str__(self):
+        return f'{self.empresa} - {self.ano}/{self.mes:02d} - {self.conta_dre} - {self.valor}'

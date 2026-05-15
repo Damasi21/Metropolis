@@ -13,7 +13,7 @@
                 <div class="d-grid gap-2 menu-lateral">
                     <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
                     <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn active">Resultado</a>
-                    <a href="#" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
                     <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
                     <a href="#" class="btn menu-btn">Clientes</a>
                     <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn">Parâmetros</a>
@@ -27,7 +27,7 @@
 
                 <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-5">
                     <div class="col">
-                        <div class="card shadow-sm h-100">
+                        <div class="card shadow-sm h-100 indicador-tooltip" data-tooltip="" tabindex="0">
                             <div class="card-body">
                                 <small>Receita Bruta</small>
                                 <h5 class="{% if kpis.receita_bruta != '-' and kpis.receita_bruta|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.receita_bruta }}</h5>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="card shadow-sm h-100">
+                        <div class="card shadow-sm h-100 indicador-tooltip" data-tooltip="" tabindex="0">
                             <div class="card-body">
                                 <small>Deduções e Gastos Variáveis</small>
                                 <h5 class="{% if kpis.deducoes_gastos_variaveis != '-' and kpis.deducoes_gastos_variaveis|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.deducoes_gastos_variaveis }}</h5>
@@ -45,7 +45,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="card shadow-sm h-100">
+                        <div class="card shadow-sm h-100 indicador-tooltip" data-tooltip="" tabindex="0">
                             <div class="card-body">
                                 <small class="text-nowrap">Margem de Contribuição</small>
                                 <h5 class="{% if kpis.margem_contribuicao != '-' and kpis.margem_contribuicao|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.margem_contribuicao }}</h5>
@@ -54,7 +54,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="card shadow-sm h-100">
+                        <div class="card shadow-sm h-100 indicador-tooltip" data-tooltip="" tabindex="0">
                             <div class="card-body">
                                 <small>Gastos Fixos</small>
                                 <h5 class="{% if kpis.gastos_fixos != '-' and kpis.gastos_fixos|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.gastos_fixos }}</h5>
@@ -63,7 +63,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="card shadow-sm h-100">
+                        <div class="card shadow-sm h-100 indicador-tooltip" data-tooltip="" tabindex="0">
                             <div class="card-body">
                                 <small>EBIT</small>
                                 <h5 class="{% if kpis.ebit != '-' and kpis.ebit|slice:':1' == '-' %}valor-negativo{% endif %}">{{ kpis.ebit }}</h5>
@@ -72,7 +72,7 @@
                     </div>
                 </div>
 
-                <div class="card shadow-sm mt-4">
+                <div class="card shadow-sm mt-4 dre-fullscreen-panel" id="dreFullscreenPanel">
                     <div class="card-body p-0">
                         <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-2 flex-wrap gap-2">
                             <div class="d-flex align-items-center flex-wrap gap-2">
@@ -87,17 +87,31 @@
                                 </div>
                             </div>
 
-                            <button
-                                class="titulo-toggle d-flex align-items-center gap-2 dre-toggle-btn"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#painelDreTabela"
-                                aria-expanded="true"
-                                aria-controls="painelDreTabela"
-                            >
-                                <span>Encolher tabela do DRE</span>
-                                <span class="fs-6">v</span>
-                            </button>
+                            <div class="d-flex align-items-center gap-2">
+                                <button
+                                    class="dre-fullscreen-btn"
+                                    type="button"
+                                    id="dreFullscreenBtn"
+                                    aria-label="Abrir DRE em tela cheia"
+                                    title="Tela cheia"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+                                    </svg>
+                                </button>
+
+                                <button
+                                    class="titulo-toggle d-flex align-items-center gap-2 dre-toggle-btn"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#painelDreTabela"
+                                    aria-expanded="true"
+                                    aria-controls="painelDreTabela"
+                                >
+                                    <span>Encolher tabela do DRE</span>
+                                    <span class="fs-6">v</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="collapse show" id="painelDreTabela">
