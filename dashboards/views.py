@@ -1,5 +1,6 @@
 from calendar import monthrange
 from datetime import date
+from decimal import Decimal, InvalidOperation
 import json
 from threading import Thread
 import unicodedata
@@ -13,6 +14,7 @@ from django.db import close_old_connections
 from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
@@ -26,6 +28,7 @@ from .models import (
     ContaReceber,
     ContaDRE,
     DeParaCategoriaDRE,
+    DREProjetado,
     IndicadorConfiguracao,
     ParametroEmpresa,
 )
@@ -406,6 +409,135 @@ def _remover_mes_referencia_ah(dre):
     return dre
 
 
+def _resolver_ano_projetado(meses_periodo):
+    if not meses_periodo:
+        return date.today().year
+
+    anos = [mes['ano'] for mes in meses_periodo]
+    return max(set(anos), key=anos.count)
+
+
+def _meses_ano_projetado(ano):
+    return [{
+        'codigo': f'{ano}-{mes:02d}',
+        'ano': ano,
+        'mes': mes,
+        'rotulo': MESES_LABELS[mes],
+    } for mes in range(1, 13)]
+
+
+def _metadados_linha_projetado(linha):
+    if linha['nivel'] in (1, 2) and linha['id'].startswith('conta-'):
+        return {
+            'tipo_linha': 'conta',
+            'conta_id': int(linha['id'].split('-')[1]),
+            'categoria_id': None,
+        }
+
+    if linha['nivel'] == 3 and linha['id'].startswith('categoria-'):
+        _, conta_id, categoria_id = linha['id'].split('-', 2)
+        return {
+            'tipo_linha': 'categoria',
+            'conta_id': int(conta_id),
+            'categoria_id': int(categoria_id),
+        }
+
+    return None
+
+
+def _carregar_projetados_por_linha(empresa, ano):
+    projetados = DREProjetado.objects.filter(
+        empresa=empresa,
+        ano=ano,
+    ).select_related('conta_dre', 'categoria')
+
+    valores = {}
+    for item in projetados:
+        chave = (item.tipo_linha, item.conta_dre_id, item.categoria_id, item.mes)
+        valores[chave] = float(item.valor or 0)
+
+    return valores
+
+
+def _calcular_percentual_delta(realizado, projetado):
+    if not projetado:
+        return None
+    return ((realizado / projetado) - 1) * 100
+
+
+def _anotar_projetado_dre(dre, empresa, ano):
+    projetados = _carregar_projetados_por_linha(empresa, ano)
+    valores_referencia_projetado = {}
+    valores_anteriores = {}
+
+    for linha in dre:
+        metadados = _metadados_linha_projetado(linha)
+        if not metadados:
+            continue
+
+        for mes in linha['meses']:
+            valor = projetados.get((
+                metadados['tipo_linha'],
+                metadados['conta_id'],
+                metadados['categoria_id'],
+                mes['mes'],
+            ), 0.0)
+
+            if linha['nivel'] == 1 and linha['sinal'] == 'positivo':
+                valores_referencia_projetado[mes['mes']] = valor
+        if valores_referencia_projetado:
+            break
+
+    for linha in dre:
+        metadados = _metadados_linha_projetado(linha)
+        if not metadados:
+            continue
+
+        chave_linha = (
+            metadados['tipo_linha'],
+            metadados['conta_id'],
+            metadados['categoria_id'],
+        )
+        anterior = None
+
+        for mes in linha['meses']:
+            valor_projetado = projetados.get((*chave_linha, mes['mes']), 0.0)
+            referencia = valores_referencia_projetado.get(mes['mes'], 0.0)
+            percentual_ah = None
+            if anterior not in (None, 0):
+                percentual_ah = ((valor_projetado / anterior) - 1) * 100
+
+            delta = _calcular_percentual_delta(mes.get('valor') or 0, valor_projetado)
+            mes['projetado_valor'] = valor_projetado
+            mes['projetado'] = _formatar_moeda(valor_projetado)
+            mes['projetado_av'] = _formatar_percentual(
+                (valor_projetado / referencia) * 100 if referencia else 0
+            )
+            mes['projetado_ah'] = '-' if percentual_ah is None else _formatar_percentual(percentual_ah)
+            mes['delta_projetado'] = '-' if delta is None else _formatar_percentual(delta)
+            anterior = valor_projetado
+
+    return dre
+
+
+def _converter_valor_planilha(valor):
+    if valor in (None, ''):
+        return Decimal('0')
+
+    if isinstance(valor, (int, float, Decimal)):
+        return Decimal(str(valor)).quantize(Decimal('0.01'))
+
+    texto = str(valor).strip()
+    if not texto:
+        return Decimal('0')
+
+    texto = texto.replace('R$', '').replace(' ', '')
+    if ',' in texto:
+        texto = texto.replace('.', '').replace(',', '.')
+
+    return Decimal(texto).quantize(Decimal('0.01'))
+
+
 def _resolver_meses_periodo(periodo_selecionado, data_inicial=None, data_final=None):
     hoje = date.today()
     meses = []
@@ -637,6 +769,8 @@ def _montar_meses_linha(valores, meses_periodo, referencia_av, multiplicador_exi
             'rotulo': mes['rotulo'],
             'mes_abreviado': MESES_ABREVIADOS[mes['mes']],
             'ano': mes['ano'],
+            'mes': mes['mes'],
+            'valor': valor_exibicao,
             'realizado': _formatar_moeda(valor_exibicao),
             'av': _formatar_percentual(
                 (valor_exibicao / referencia_av[mes['codigo']]) * 100 if referencia_av[mes['codigo']] else 0
@@ -1383,6 +1517,190 @@ def dashboard_resultado(request, slug):
         **periodo_contexto,
     }
     return render(request, 'dashboard.html', contexto)
+
+
+def exportar_planilha_dre_projetado(request, slug):
+    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    periodo_contexto = _resolver_periodo_dashboard(request)
+    ano = _resolver_ano_projetado(periodo_contexto['meses_dre'])
+    meses_ano = _meses_ano_projetado(ano)
+    meses_dre_calculo = _adicionar_mes_referencia_ah(meses_ano)
+    dre = _remover_mes_referencia_ah(_construir_linhas_dre(
+        empresa,
+        meses_dre_calculo,
+        periodo_contexto['campo_data_periodo'],
+    ))
+    dre = _anotar_projetado_dre(dre, empresa, ano)
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = f'Projetado {ano}'
+    worksheet.append(['Tipo', 'Conta DRE ID', 'Categoria ID', 'Conta / Categoria', *[MESES_LABELS[mes] for mes in range(1, 13)]])
+    worksheet.freeze_panes = 'E2'
+    for coluna in range(1, 17):
+        worksheet.cell(row=1, column=coluna).font = Font(bold=True)
+
+    worksheet.column_dimensions['A'].hidden = True
+    worksheet.column_dimensions['B'].hidden = True
+    worksheet.column_dimensions['C'].hidden = True
+    worksheet.column_dimensions['D'].width = 44
+    for coluna in range(5, 17):
+        worksheet.column_dimensions[worksheet.cell(row=1, column=coluna).column_letter].width = 15
+
+    for linha in dre:
+        if linha['nivel'] > 3:
+            continue
+
+        metadados = _metadados_linha_projetado(linha)
+        if not metadados:
+            continue
+
+        recuo = '    ' * max(linha['nivel'] - 1, 0)
+        worksheet.append([
+            metadados['tipo_linha'],
+            metadados['conta_id'],
+            metadados['categoria_id'] or '',
+            f"{recuo}{linha['prefixo']} {linha['nome']}".strip(),
+            *[mes.get('projetado_valor', 0) for mes in linha['meses']],
+        ])
+
+        linha_atual = worksheet.max_row
+        if linha['nivel'] == 1:
+            for coluna in range(4, 17):
+                worksheet.cell(row=linha_atual, column=coluna).font = Font(bold=True)
+        for coluna in range(5, 17):
+            worksheet.cell(row=linha_atual, column=coluna).number_format = 'R$ #,##0.00;[Red]-R$ #,##0.00'
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    nome_arquivo = f"dre_projetado_{_slug_planilha(empresa.nome_empresa)}_{ano}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
+    workbook.save(response)
+    return response
+
+
+@require_POST
+def importar_planilha_dre_projetado(request, slug):
+    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    arquivo = request.FILES.get('planilha_projetado')
+    ano = int(request.POST.get('ano_projetado') or date.today().year)
+    querystring = request.POST.get('querystring', '')
+    destino = reverse('dashboard_dre_projetado', kwargs={'slug': slug})
+    if querystring:
+        destino = f'{destino}?{querystring}'
+
+    if not arquivo:
+        messages.error(request, 'Selecione uma planilha .xlsx para importar.')
+        return redirect(destino)
+
+    try:
+        workbook = load_workbook(arquivo, data_only=True)
+        worksheet = workbook.active
+    except Exception:
+        messages.error(request, 'Nao foi possivel ler a planilha. Envie um arquivo .xlsx valido.')
+        return redirect(destino)
+
+    atualizacoes = []
+    erros = []
+    contas_por_id = {conta.id: conta for conta in ContaDRE.objects.filter(ativo=True)}
+    categorias_por_id = {categoria.id: categoria for categoria in Categoria.objects.all()}
+
+    for linha_idx, linha in enumerate(worksheet.iter_rows(min_row=2, values_only=True), start=2):
+        tipo_linha = str(linha[0] or '').strip()
+        conta_id = linha[1]
+        categoria_id = linha[2]
+
+        if not tipo_linha and not conta_id:
+            continue
+
+        try:
+            conta_id = int(conta_id)
+        except (TypeError, ValueError):
+            erros.append(f'Linha {linha_idx}: Conta DRE ID invalida.')
+            continue
+
+        conta = contas_por_id.get(conta_id)
+        if not conta:
+            erros.append(f'Linha {linha_idx}: Conta DRE ID {conta_id} nao encontrada.')
+            continue
+
+        categoria = None
+        if tipo_linha == 'categoria':
+            try:
+                categoria_id = int(categoria_id)
+            except (TypeError, ValueError):
+                erros.append(f'Linha {linha_idx}: Categoria ID invalida.')
+                continue
+
+            categoria = categorias_por_id.get(categoria_id)
+            if not categoria:
+                erros.append(f'Linha {linha_idx}: Categoria ID {categoria_id} nao encontrada.')
+                continue
+        elif tipo_linha != 'conta':
+            erros.append(f'Linha {linha_idx}: tipo de linha invalido.')
+            continue
+
+        for indice_mes, mes in enumerate(range(1, 13), start=4):
+            try:
+                valor = _converter_valor_planilha(linha[indice_mes] if len(linha) > indice_mes else None)
+            except (InvalidOperation, ValueError):
+                erros.append(f'Linha {linha_idx}: valor invalido em {MESES_LABELS[mes]}.')
+                continue
+
+            atualizacoes.append({
+                'tipo_linha': tipo_linha,
+                'conta_dre': conta,
+                'categoria': categoria,
+                'mes': mes,
+                'valor': valor,
+            })
+
+    if erros:
+        messages.error(request, 'A planilha nao foi importada: ' + ' '.join(erros[:8]))
+        return redirect(destino)
+
+    with transaction.atomic():
+        for item in atualizacoes:
+            DREProjetado.objects.update_or_create(
+                empresa=empresa,
+                tipo_linha=item['tipo_linha'],
+                conta_dre=item['conta_dre'],
+                categoria=item['categoria'],
+                ano=ano,
+                mes=item['mes'],
+                defaults={'valor': item['valor']},
+            )
+
+    messages.success(request, f'Projetado de {ano} importado com sucesso.')
+    return redirect(destino)
+
+
+def dashboard_dre_projetado(request, slug):
+    empresa = get_object_or_404(ParametroEmpresa, slug_empresa__iexact=slug)
+    periodo_contexto = _resolver_periodo_dashboard(request)
+    ano_projetado = _resolver_ano_projetado(periodo_contexto['meses_dre'])
+    meses_dre_calculo = _adicionar_mes_referencia_ah(periodo_contexto['meses_dre'])
+    dre = _remover_mes_referencia_ah(_construir_linhas_dre(
+        empresa,
+        meses_dre_calculo,
+        periodo_contexto['campo_data_periodo'],
+    ))
+    dre = [linha for linha in dre if linha['nivel'] <= 3]
+    for linha in dre:
+        if linha['nivel'] == 3:
+            linha['possui_filhos'] = False
+    dre = _anotar_projetado_dre(dre, empresa, ano_projetado)
+
+    contexto = {
+        'slug': slug,
+        'empresa_nome': empresa.nome_empresa,
+        'dre': dre,
+        'dre_colspan': 1 + (len(periodo_contexto['meses_dre']) * 7),
+        'ano_projetado': ano_projetado,
+        **periodo_contexto,
+    }
+    return render(request, 'dashboard2.html', contexto)
 
 
 #-------------------------------------------------------------------------------

@@ -14,6 +14,7 @@ from .models import (
     ContaReceber,
     ContaDRE,
     DeParaCategoriaDRE,
+    DREProjetado,
     IndicadorConfiguracao,
     ParametroEmpresa,
 )
@@ -271,6 +272,95 @@ class IndicadoresViewTestCase(TestCase):
 
 
 class DashboardIndicadoresTestCase(TestCase):
+    def test_dashboard_dre_projetado_renderiza_layout_com_projetado(self):
+        empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-projetado',
+            nome_empresa='Empresa Projetado',
+        )
+        ContaDRE.objects.create(nome='Receita Bruta', nivel=1, sinal='positivo', ordem=1, ativo=True)
+
+        response = self.client.get(reverse('dashboard_dre_projetado', kwargs={'slug': empresa.slug_empresa}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dashboard2.html')
+        self.assertContains(response, 'DRE vs Projetado')
+        self.assertContains(response, 'Projetado')
+        self.assertContains(response, 'Realizado')
+
+    def test_exportar_planilha_dre_projetado_traz_contas_e_categorias_sem_clientes(self):
+        empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-projetado-export',
+            nome_empresa='Empresa Projetado Export',
+        )
+        receita_pai = ContaDRE.objects.create(nome='Receita Bruta', nivel=1, sinal='positivo', ordem=1, ativo=True)
+        receita_filho = ContaDRE.objects.create(nome='Receita Operacional', pai=receita_pai, nivel=2, sinal='positivo', ordem=1, ativo=True)
+        categoria = Categoria.objects.create(codigo='1.01.01', descricao='Receita Servicos')
+        DeParaCategoriaDRE.objects.create(empresa=empresa, categoria=categoria, conta_dre=receita_filho)
+        DREProjetado.objects.create(
+            empresa=empresa,
+            tipo_linha='categoria',
+            conta_dre=receita_filho,
+            categoria=categoria,
+            ano=2026,
+            mes=1,
+            valor=1234,
+        )
+
+        response = self.client.get(
+            reverse('exportar_planilha_dre_projetado', kwargs={'slug': empresa.slug_empresa}),
+            {'periodo': 'ano:2026'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        workbook = load_workbook(BytesIO(response.content), data_only=True)
+        worksheet = workbook.active
+        self.assertEqual(worksheet['E1'].value, 'Janeiro')
+        nomes = [worksheet.cell(row=linha, column=4).value for linha in range(2, worksheet.max_row + 1)]
+        self.assertIn('(+) Receita Bruta', nomes)
+        self.assertIn('(+) Receita Operacional', nomes)
+        self.assertIn('Receita Servicos', [nome.strip() for nome in nomes])
+        self.assertEqual(worksheet.cell(row=4, column=5).value, 1234)
+        self.assertNotIn('Sem cliente/fornecedor', nomes)
+
+    def test_importar_planilha_dre_projetado_salva_valores_no_painel(self):
+        empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-projetado-import',
+            nome_empresa='Empresa Projetado Import',
+        )
+        receita = ContaDRE.objects.create(nome='Receita Bruta', nivel=1, sinal='positivo', ordem=1, ativo=True)
+
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.append(['Tipo', 'Conta DRE ID', 'Categoria ID', 'Conta / Categoria', 'Janeiro', 'Fevereiro'])
+        worksheet.append(['conta', receita.id, '', 'Receita Bruta', 1000, 1500])
+        arquivo = BytesIO()
+        workbook.save(arquivo)
+        arquivo.seek(0)
+        arquivo.name = 'dre_projetado.xlsx'
+
+        response = self.client.post(
+            reverse('importar_planilha_dre_projetado', kwargs={'slug': empresa.slug_empresa}),
+            data={
+                'ano_projetado': '2026',
+                'planilha_projetado': arquivo,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(DREProjetado.objects.filter(
+            empresa=empresa,
+            conta_dre=receita,
+            ano=2026,
+            mes=1,
+            valor=1000,
+        ).exists())
+
+        painel = self.client.get(
+            reverse('dashboard_dre_projetado', kwargs={'slug': empresa.slug_empresa}),
+            {'periodo': 'ano:2026'},
+        )
+        self.assertContains(painel, 'R$ 1.000,00')
+
     def test_dashboard_resultado_exibe_kpis_calculados_a_partir_do_dre(self):
         empresa = ParametroEmpresa.objects.create(
             slug_empresa='empresa-kpi',

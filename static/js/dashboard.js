@@ -216,6 +216,8 @@ function inicializarDashboardResultado() {
     const dreToggleBtn = document.querySelector('.dre-toggle-btn');
     const dreExpandAllBtn = document.getElementById('dreExpandAllBtn');
     const dreCollapseAllBtn = document.getElementById('dreCollapseAllBtn');
+    const dreFullscreenPanel = document.getElementById('dreFullscreenPanel');
+    const dreFullscreenBtn = document.getElementById('dreFullscreenBtn');
     const dreContaPaiSelect = document.getElementById('dreContaPaiSelect');
     const dreGraficoMediaMensal = document.getElementById('dreGraficoMediaMensal');
     const dreGraficoPlot = document.getElementById('dreGraficoPlot');
@@ -396,6 +398,83 @@ function inicializarDashboardResultado() {
         dreCollapseAllBtn.addEventListener('click', collapseToParents);
     }
 
+    function isDreFullscreenActive() {
+        return document.fullscreenElement === dreFullscreenPanel
+            || (dreFullscreenPanel && dreFullscreenPanel.classList.contains('dre-fullscreen-fallback'));
+    }
+
+    function updateDreFullscreenButton() {
+        if (!dreFullscreenBtn) {
+            return;
+        }
+
+        const active = isDreFullscreenActive();
+        dreFullscreenBtn.classList.toggle('active', active);
+        dreFullscreenBtn.setAttribute('aria-label', active ? 'Fechar tela cheia do DRE' : 'Abrir DRE em tela cheia');
+        dreFullscreenBtn.setAttribute('title', active ? 'Sair da tela cheia' : 'Tela cheia');
+    }
+
+    function openDreFallbackFullscreen() {
+        if (!dreFullscreenPanel) {
+            return;
+        }
+
+        dreFullscreenPanel.classList.add('dre-fullscreen-fallback');
+        document.body.classList.add('dre-fullscreen-body-lock');
+        syncTopWidth();
+        updateDreFullscreenButton();
+    }
+
+    function closeDreFallbackFullscreen() {
+        if (!dreFullscreenPanel) {
+            return;
+        }
+
+        dreFullscreenPanel.classList.remove('dre-fullscreen-fallback');
+        document.body.classList.remove('dre-fullscreen-body-lock');
+        syncTopWidth();
+        updateDreFullscreenButton();
+    }
+
+    if (dreFullscreenPanel && dreFullscreenBtn) {
+        dreFullscreenBtn.addEventListener('click', function () {
+            if (document.fullscreenElement === dreFullscreenPanel) {
+                document.exitFullscreen();
+                return;
+            }
+
+            if (dreFullscreenPanel.classList.contains('dre-fullscreen-fallback')) {
+                closeDreFallbackFullscreen();
+                return;
+            }
+
+            if (dreFullscreenPanel.requestFullscreen) {
+                dreFullscreenPanel.requestFullscreen().catch(openDreFallbackFullscreen);
+                return;
+            }
+
+            openDreFallbackFullscreen();
+        });
+
+        document.addEventListener('fullscreenchange', function () {
+            if (!document.fullscreenElement) {
+                dreFullscreenPanel.classList.remove('dre-fullscreen-fallback');
+                document.body.classList.remove('dre-fullscreen-body-lock');
+            }
+
+            syncTopWidth();
+            updateDreFullscreenButton();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && dreFullscreenPanel.classList.contains('dre-fullscreen-fallback')) {
+                closeDreFallbackFullscreen();
+            }
+        });
+
+        updateDreFullscreenButton();
+    }
+
     // Evita que textos muito proximos disputem o mesmo espaco visual no grafico.
     function ocultarValoresSobrepostos() {
         const valores = Array.from(dreGraficoPlot.querySelectorAll('.dre-grafico-coluna-valor'));
@@ -556,6 +635,8 @@ function inicializarDashboardResultado() {
 function inicializarDashboardVisaoGeral() {
     const graficoTempo = document.getElementById('visaoGraficoTempo');
     const graficoMargem = document.getElementById('visaoGraficoMargem');
+    const visaoTempoFullscreenPanel = document.getElementById('visaoTempoFullscreenPanel');
+    const visaoTempoFullscreenBtn = document.getElementById('visaoTempoFullscreenBtn');
 
     if (!graficoTempo && !graficoMargem) {
         return;
@@ -630,6 +711,47 @@ function inicializarDashboardVisaoGeral() {
         graficoTempo.style.setProperty('--visao-mes-largura', `${larguraMes.toFixed(2)}px`);
     }
 
+    function isVisaoTempoFullscreenActive() {
+        return document.fullscreenElement === visaoTempoFullscreenPanel
+            || (visaoTempoFullscreenPanel && visaoTempoFullscreenPanel.classList.contains('visao-tempo-fullscreen-fallback'));
+    }
+
+    function updateVisaoTempoFullscreenButton() {
+        if (!visaoTempoFullscreenBtn) {
+            return;
+        }
+
+        const active = isVisaoTempoFullscreenActive();
+        visaoTempoFullscreenBtn.classList.toggle('active', active);
+        visaoTempoFullscreenBtn.setAttribute(
+            'aria-label',
+            active ? 'Fechar tela cheia do grafico de recebimentos e pagamentos' : 'Abrir grafico de recebimentos e pagamentos em tela cheia'
+        );
+        visaoTempoFullscreenBtn.setAttribute('title', active ? 'Sair da tela cheia' : 'Tela cheia');
+    }
+
+    function openVisaoTempoFallbackFullscreen() {
+        if (!visaoTempoFullscreenPanel) {
+            return;
+        }
+
+        visaoTempoFullscreenPanel.classList.add('visao-tempo-fullscreen-fallback');
+        document.body.classList.add('dre-fullscreen-body-lock');
+        ajustarLarguraMesesGraficoTempo();
+        updateVisaoTempoFullscreenButton();
+    }
+
+    function closeVisaoTempoFallbackFullscreen() {
+        if (!visaoTempoFullscreenPanel) {
+            return;
+        }
+
+        visaoTempoFullscreenPanel.classList.remove('visao-tempo-fullscreen-fallback');
+        document.body.classList.remove('dre-fullscreen-body-lock');
+        ajustarLarguraMesesGraficoTempo();
+        updateVisaoTempoFullscreenButton();
+    }
+
     function renderizarGraficoMargem() {
         if (!graficoMargem) {
             return;
@@ -661,6 +783,45 @@ function inicializarDashboardVisaoGeral() {
 
     renderizarGraficoTempo();
     renderizarGraficoMargem();
+
+    if (visaoTempoFullscreenPanel && visaoTempoFullscreenBtn) {
+        visaoTempoFullscreenBtn.addEventListener('click', function () {
+            if (document.fullscreenElement === visaoTempoFullscreenPanel) {
+                document.exitFullscreen();
+                return;
+            }
+
+            if (visaoTempoFullscreenPanel.classList.contains('visao-tempo-fullscreen-fallback')) {
+                closeVisaoTempoFallbackFullscreen();
+                return;
+            }
+
+            if (visaoTempoFullscreenPanel.requestFullscreen) {
+                visaoTempoFullscreenPanel.requestFullscreen().catch(openVisaoTempoFallbackFullscreen);
+                return;
+            }
+
+            openVisaoTempoFallbackFullscreen();
+        });
+
+        document.addEventListener('fullscreenchange', function () {
+            if (!document.fullscreenElement) {
+                visaoTempoFullscreenPanel.classList.remove('visao-tempo-fullscreen-fallback');
+                document.body.classList.remove('dre-fullscreen-body-lock');
+            }
+
+            ajustarLarguraMesesGraficoTempo();
+            updateVisaoTempoFullscreenButton();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && visaoTempoFullscreenPanel.classList.contains('visao-tempo-fullscreen-fallback')) {
+                closeVisaoTempoFallbackFullscreen();
+            }
+        });
+
+        updateVisaoTempoFullscreenButton();
+    }
 
     window.addEventListener('resize', ajustarLarguraMesesGraficoTempo);
 }

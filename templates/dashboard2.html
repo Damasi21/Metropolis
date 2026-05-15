@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}DRE vs Projetado | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn active">DRE vs Projetado</a>
+                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn">Parâmetros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                {% include 'topo_dashboard.html' with titulo_topo='DRE vs Projetado' tipo_visualizacao=tipo_visualizacao %}
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}secondary{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="dre-projetado-layout">
+                    <aside class="dre-projetado-opcoes" aria-label="Indicadores DRE">
+                        <h6>Indicadores DRE:</h6>
+
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>Projetado</span>
+                        </label>
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>Realizado</span>
+                        </label>
+
+                        <div class="dre-projetado-divider"></div>
+
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>Valor</span>
+                        </label>
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>AV %</span>
+                        </label>
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>AH %</span>
+                        </label>
+                        <label class="dre-projetado-check">
+                            <input type="checkbox" checked>
+                            <span>Δ %</span>
+                        </label>
+                    </aside>
+
+                    <div class="card shadow-sm dre-fullscreen-panel dre-projetado-panel" id="dreFullscreenPanel">
+                        <div class="card-body p-0">
+                            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-2 flex-wrap gap-2">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <h5 class="fw-bold mb-1">DRE vs Projetado</h5>
+                                    <div class="d-flex gap-2 dre-acoes-nivel">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="dreExpandAllBtn">
+                                            Expandir
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="dreCollapseAllBtn">
+                                            Encolher
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <a
+                                        href="{% url 'exportar_planilha_dre_projetado' slug=slug %}?{{ request.GET.urlencode }}"
+                                        class="btn btn-sm btn-outline-success dre-planilha-btn"
+                                        title="Exportar planilha do projetado"
+                                    >
+                                        <span class="dre-excel-icon" aria-hidden="true">X</span>
+                                        <span>Exportar</span>
+                                    </a>
+
+                                    <form
+                                        method="post"
+                                        action="{% url 'importar_planilha_dre_projetado' slug=slug %}"
+                                        enctype="multipart/form-data"
+                                        class="d-inline-flex"
+                                    >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="ano_projetado" value="{{ ano_projetado }}">
+                                        <input type="hidden" name="querystring" value="{{ request.GET.urlencode }}">
+                                        <input
+                                            type="file"
+                                            id="planilhaProjetadoInput"
+                                            name="planilha_projetado"
+                                            class="d-none"
+                                            accept=".xlsx"
+                                            data-planilha-auto-submit
+                                        >
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-success dre-planilha-btn"
+                                            data-planilha-trigger="planilhaProjetadoInput"
+                                            title="Importar planilha do projetado"
+                                        >
+                                            <span class="dre-excel-icon" aria-hidden="true">X</span>
+                                            <span>Importar</span>
+                                        </button>
+                                    </form>
+
+                                    <button
+                                        class="dre-fullscreen-btn"
+                                        type="button"
+                                        id="dreFullscreenBtn"
+                                        aria-label="Abrir DRE vs Projetado em tela cheia"
+                                        title="Tela cheia"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        class="titulo-toggle d-flex align-items-center gap-2 dre-toggle-btn"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#painelDreTabela"
+                                        aria-expanded="true"
+                                        aria-controls="painelDreTabela"
+                                    >
+                                        <span>Encolher tabela do DRE</span>
+                                        <span class="fs-6">v</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="collapse show" id="painelDreTabela">
+                                <div class="dre-scroll-top" id="dreScrollTop">
+                                    <div class="dre-scroll-top-inner" id="dreScrollTopInner"></div>
+                                </div>
+
+                                <div class="table-responsive" id="dreTableWrapper">
+                                    <table class="table table-bordered align-middle mb-0 tabela-dre tabela-dre-projetado">
+                                        <thead>
+                                            <tr>
+                                                <th style="min-width: 340px;">Grupo / Categoria</th>
+                                                {% for mes in meses_dre %}
+                                                    <th colspan="7" class="text-center">{{ mes.rotulo }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr>
+                                                <th></th>
+                                                {% for mes in meses_dre %}
+                                                    <th>Projetado</th>
+                                                    <th>AV %</th>
+                                                    <th>AH %</th>
+                                                    <th>Realizado</th>
+                                                    <th>AV %</th>
+                                                    <th>AH %</th>
+                                                    <th>Δ %</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for linha in dre %}
+                                                <tr
+                                                    class="{% if linha.nivel == 1 and linha.sinal == 'resultado' %}linha-resultado{% elif linha.nivel == 1 %}linha-pai{% elif linha.nivel == 2 %}linha-filho{% elif linha.nivel == 3 %}linha-categoria{% else %}linha-cliente-fornecedor{% endif %}"
+                                                    data-row-id="{{ linha.id }}"
+                                                    {% if linha.parent_id %}data-parent-id="{{ linha.parent_id }}"{% endif %}
+                                                    {% if linha.parent_id %}style="display: none;"{% endif %}
+                                                >
+                                                    <td class="{% if linha.nivel == 2 %}ps-4{% elif linha.nivel == 3 %}ps-5{% elif linha.nivel == 4 %}ps-6{% endif %}">
+                                                        {% if linha.possui_filhos %}
+                                                            <button
+                                                                type="button"
+                                                                class="dre-row-toggle"
+                                                                data-target-id="{{ linha.id }}"
+                                                                aria-expanded="{% if linha.expandido %}true{% else %}false{% endif %}"
+                                                            >
+                                                                <span class="dre-row-toggle-icon">{% if linha.expandido %}-{% else %}+{% endif %}</span>
+                                                            </button>
+                                                        {% else %}
+                                                            <span class="dre-row-toggle dre-row-toggle-placeholder"></span>
+                                                        {% endif %}
+                                                        {% if linha.prefixo %}
+                                                            <span class="me-2">{{ linha.prefixo }}</span>
+                                                        {% endif %}
+                                                        {{ linha.nome }}
+                                                    </td>
+                                                    {% for mes in linha.meses %}
+                                                        <td class="{% if mes.projetado != '-' and mes.projetado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.projetado }}</td>
+                                                        <td class="{% if mes.projetado_av != '-' and mes.projetado_av|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.projetado_av }}</td>
+                                                        <td class="{% if mes.projetado_ah != '-' and mes.projetado_ah|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.projetado_ah }}</td>
+                                                        <td class="{% if mes.realizado != '-' and mes.realizado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.realizado }}</td>
+                                                        <td class="{% if mes.av != '-' and mes.av|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.av }}</td>
+                                                        <td class="{% if mes.ah != '-' and mes.ah|slice:':1' == '-' %}valor-negativo{% endif %}">
+                                                            <span class="dre-ah-valor">
+                                                                {{ mes.ah }}
+                                                                {% if mes.ah_direcao == 'alta' %}
+                                                                    <span class="dre-ah-seta dre-ah-seta-alta" aria-label="Alta em relacao ao mes anterior"></span>
+                                                                {% elif mes.ah_direcao == 'baixa' %}
+                                                                    <span class="dre-ah-seta dre-ah-seta-baixa" aria-label="Baixa em relacao ao mes anterior"></span>
+                                                                {% endif %}
+                                                            </span>
+                                                        </td>
+                                                        <td class="{% if mes.delta_projetado != '-' and mes.delta_projetado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.delta_projetado }}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="{{ dre_colspan }}" class="text-center text-muted py-4">
+                                                        Nenhuma conta DRE ativa encontrada para montar a estrutura.
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+</div>
+<script src="{% static 'js/parametros.js' %}?v=20260514a"></script>
+{% endblock %}

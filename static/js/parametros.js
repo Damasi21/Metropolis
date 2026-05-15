@@ -190,4 +190,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    document.querySelectorAll('[data-planilha-auto-submit]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            if (input.files.length && input.form) {
+                input.form.submit();
+            }
+        });
+    });
 });
