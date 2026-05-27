@@ -1443,6 +1443,61 @@ def _montar_grafico_variacao_mensal(dre, nome_conta='receita bruta operacional')
     }
 
 
+def _montar_grafico_projetado_realizado(dre):
+    linhas = [
+        linha for linha in dre
+        if linha.get('nivel') in (1, 2)
+    ]
+    opcoes = []
+
+    for linha in linhas:
+        if linha.get('nivel') != 1:
+            continue
+
+        filhos = [
+            filho for filho in linhas
+            if filho.get('parent_id') == linha['id']
+        ]
+        opcoes.append({
+            'id': linha['id'],
+            'nome': linha['nome'],
+            'filhos': [
+                {
+                    'id': filho['id'],
+                    'nome': filho['nome'],
+                }
+                for filho in filhos
+            ],
+        })
+
+    series = []
+    for linha in linhas:
+        pontos = []
+        for mes in linha.get('meses', []):
+            projetado = float(mes.get('projetado_valor') or 0)
+            realizado = float(mes.get('valor') or 0)
+            pontos.append({
+                'rotulo': mes.get('rotulo') or MESES_ABREVIADOS.get(mes.get('mes'), ''),
+                'projetado': round(projetado, 2),
+                'realizado': round(realizado, 2),
+                'projetado_formatado': _formatar_moeda_resumida(projetado),
+                'realizado_formatado': _formatar_moeda_resumida(realizado),
+            })
+
+        series.append({
+            'id': linha['id'],
+            'nome': linha['nome'],
+            'nivel': linha['nivel'],
+            'parent_id': linha.get('parent_id') or '',
+            'pontos': pontos,
+        })
+
+    return {
+        'opcoes': opcoes,
+        'series': series,
+    }
+
+
 def _salvar_formula_conta(conta, contas_formula):
     ComposicaoContaDRE.objects.filter(conta_resultado=conta).delete()
 
@@ -1710,6 +1765,7 @@ def dashboard_dre_projetado(request, slug):
         'slug': slug,
         'empresa_nome': empresa.nome_empresa,
         'dre': dre,
+        'grafico_projetado_realizado': _montar_grafico_projetado_realizado(dre),
         'dre_colspan': 1 + (len(periodo_contexto['meses_dre']) * 7),
         'ano_projetado': ano_projetado,
         **periodo_contexto,

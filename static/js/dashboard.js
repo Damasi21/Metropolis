@@ -226,6 +226,10 @@ function inicializarDashboardResultado() {
     const variacaoMensalAno = document.getElementById('variacaoMensalAno');
     const dreContasPaiDataNode = document.getElementById('dre-contas-pai-data');
     const dreContasPaiData = dreContasPaiDataNode ? JSON.parse(dreContasPaiDataNode.textContent) : [];
+    const dreProjetadoSelect = document.getElementById('dreProjetadoContaSelect');
+    const dreProjetadoPlot = document.getElementById('dreProjetadoRealizadoPlot');
+    const dreProjetadoDataNode = document.getElementById('dre-projetado-realizado-data');
+    const dreProjetadoData = dreProjetadoDataNode ? JSON.parse(dreProjetadoDataNode.textContent) : { series: [] };
 
     if (!topScroll || !topInner || !tableWrapper) {
         return;
@@ -629,6 +633,108 @@ function inicializarDashboardResultado() {
             dreContaPaiSelect.value = String(dreContasPaiData[0].id);
             renderizarGraficoContaPai(dreContaPaiSelect.value);
         }
+    }
+
+    function pontosPolyline(pontos, chave, escalaX, escalaY) {
+        return pontos.map(function (ponto, indice) {
+            return `${escalaX(indice).toFixed(2)},${escalaY(ponto[chave]).toFixed(2)}`;
+        }).join(' ');
+    }
+
+    function renderizarGraficoProjetadoRealizado(contaId) {
+        if (!dreProjetadoPlot) {
+            return;
+        }
+
+        const series = Array.isArray(dreProjetadoData.series) ? dreProjetadoData.series : [];
+        const conta = series.find(function (item) {
+            return String(item.id) === String(contaId);
+        }) || series[0];
+
+        if (!conta || !Array.isArray(conta.pontos) || !conta.pontos.length) {
+            dreProjetadoPlot.className = 'dre-grafico-vazio text-muted';
+            dreProjetadoPlot.textContent = 'Nenhum dado disponivel para o grafico.';
+            return;
+        }
+
+        dreProjetadoPlot.className = 'dre-projetado-linha-plot';
+
+        const pontos = conta.pontos;
+        const largura = Math.max(760, pontos.length * 86);
+        const altura = 260;
+        const margem = { top: 34, right: 42, bottom: 34, left: 34 };
+        const valores = pontos.reduce(function (lista, ponto) {
+            lista.push(Number(ponto.projetado || 0), Number(ponto.realizado || 0));
+            return lista;
+        }, []);
+        let minimo = Math.min.apply(null, valores.concat([0]));
+        let maximo = Math.max.apply(null, valores.concat([0]));
+
+        if (minimo === maximo) {
+            maximo += 1;
+            minimo -= 1;
+        }
+
+        const respiro = (maximo - minimo) * 0.12;
+        minimo -= respiro;
+        maximo += respiro;
+
+        const areaLargura = largura - margem.left - margem.right;
+        const areaAltura = altura - margem.top - margem.bottom;
+        const escalaX = function (indice) {
+            if (pontos.length === 1) {
+                return margem.left + (areaLargura / 2);
+            }
+            return margem.left + ((areaLargura / (pontos.length - 1)) * indice);
+        };
+        const escalaY = function (valor) {
+            return margem.top + ((maximo - Number(valor || 0)) / (maximo - minimo)) * areaAltura;
+        };
+
+        const grid = pontos.map(function (ponto, indice) {
+            const x = escalaX(indice);
+            return `
+                <line class="dre-projetado-grid-line" x1="${x}" y1="${margem.top}" x2="${x}" y2="${altura - margem.bottom}"></line>
+                <text class="dre-projetado-mes-label" x="${x}" y="${altura - 8}" text-anchor="middle">${escapeHtml(ponto.rotulo)}</text>
+            `;
+        }).join('');
+
+        const labelsRealizado = pontos.map(function (ponto, indice) {
+            const x = escalaX(indice);
+            const y = escalaY(ponto.realizado);
+            return `
+                <circle class="dre-projetado-point-realizado" cx="${x}" cy="${y}" r="3.5"></circle>
+                <text class="dre-projetado-point-label" x="${x}" y="${y - 12}" text-anchor="middle">${escapeHtml(ponto.realizado_formatado)}</text>
+            `;
+        }).join('');
+
+        const labelsProjetado = pontos.map(function (ponto, indice) {
+            const x = escalaX(indice);
+            const y = escalaY(ponto.projetado);
+            return `
+                <circle class="dre-projetado-point-projetado" cx="${x}" cy="${y}" r="3"></circle>
+                <text class="dre-projetado-point-label" x="${x}" y="${y - 12}" text-anchor="middle">${escapeHtml(ponto.projetado_formatado)}</text>
+            `;
+        }).join('');
+
+        dreProjetadoPlot.innerHTML = `
+            <svg class="dre-projetado-linha-svg" viewBox="0 0 ${largura} ${altura}" role="img" aria-label="Projetado vs Realizado - ${escapeHtml(conta.nome)}">
+                ${grid}
+                <line class="dre-projetado-axis" x1="${margem.left}" y1="${altura - margem.bottom}" x2="${largura - margem.right}" y2="${altura - margem.bottom}"></line>
+                <polyline class="dre-projetado-line-projetado" points="${pontosPolyline(pontos, 'projetado', escalaX, escalaY)}"></polyline>
+                <polyline class="dre-projetado-line-realizado" points="${pontosPolyline(pontos, 'realizado', escalaX, escalaY)}"></polyline>
+                ${labelsProjetado}
+                ${labelsRealizado}
+            </svg>
+        `;
+    }
+
+    if (dreProjetadoSelect) {
+        dreProjetadoSelect.addEventListener('change', function () {
+            renderizarGraficoProjetadoRealizado(dreProjetadoSelect.value);
+        });
+
+        renderizarGraficoProjetadoRealizado(dreProjetadoSelect.value);
     }
 }
 
