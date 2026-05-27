@@ -80,7 +80,7 @@
                                     </div>
                                 </div>
 
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="d-flex align-items-center gap-2 flex-wrap dre-projetado-acoes">
                                     <a
                                         href="{% url 'exportar_planilha_dre_projetado' slug=slug %}?{{ request.GET.urlencode }}"
                                         class="btn btn-sm btn-outline-success dre-planilha-btn"
@@ -94,7 +94,7 @@
                                         method="post"
                                         action="{% url 'importar_planilha_dre_projetado' slug=slug %}"
                                         enctype="multipart/form-data"
-                                        class="d-inline-flex"
+                                        class="d-inline-flex m-0"
                                     >
                                         {% csrf_token %}
                                         <input type="hidden" name="ano_projetado" value="{{ ano_projetado }}">
@@ -130,17 +130,6 @@
                                         </svg>
                                     </button>
 
-                                    <button
-                                        class="titulo-toggle d-flex align-items-center gap-2 dre-toggle-btn"
-                                        type="button"
-                                        data-bs-toggle="collapse"
-                                        data-bs-target="#painelDreTabela"
-                                        aria-expanded="true"
-                                        aria-controls="painelDreTabela"
-                                    >
-                                        <span>Encolher tabela do DRE</span>
-                                        <span class="fs-6">v</span>
-                                    </button>
                                 </div>
                             </div>
 
@@ -229,6 +218,37 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card card-grafico dre-projetado-grafico-card">
+                        <div class="card-body">
+                            <div class="dre-projetado-grafico-topbar">
+                                <div>
+                                    <h6 class="dre-projetado-grafico-titulo mb-1">Projetado vs Realizado</h6>
+                                    <div class="grafico-legenda mb-0">
+                                        <span><i class="legenda-linha legenda-projetado"></i>Projetado</span>
+                                        <span><i class="legenda-linha legenda-realizado"></i>Realizado</span>
+                                    </div>
+                                </div>
+
+                                <label class="dre-projetado-analisar">
+                                    <span class="dre-projetado-analisar-icone" aria-hidden="true"></span>
+                                    <strong>ANALISAR</strong>
+                                    <select class="form-select form-select-sm" id="dreProjetadoContaSelect" aria-label="Analisar conta DRE">
+                                        {% for grupo in grafico_projetado_realizado.opcoes %}
+                                            <optgroup label="{{ grupo.nome }}">
+                                                <option value="{{ grupo.id }}">{{ grupo.nome }}</option>
+                                                {% for filho in grupo.filhos %}
+                                                    <option value="{{ filho.id }}">{{ filho.nome }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div class="dre-projetado-linha-plot" id="dreProjetadoRealizadoPlot"></div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -237,4 +257,5 @@
     </div>
 </div>
 <script src="{% static 'js/parametros.js' %}?v=20260514a"></script>
+{{ grafico_projetado_realizado|json_script:"dre-projetado-realizado-data" }}
 {% endblock %}

@@ -277,15 +277,32 @@ class DashboardIndicadoresTestCase(TestCase):
             slug_empresa='empresa-projetado',
             nome_empresa='Empresa Projetado',
         )
-        ContaDRE.objects.create(nome='Receita Bruta', nivel=1, sinal='positivo', ordem=1, ativo=True)
+        receita_pai = ContaDRE.objects.create(nome='Receita Bruta', nivel=1, sinal='positivo', ordem=1, ativo=True)
+        receita_filho = ContaDRE.objects.create(nome='Receita Operacional', pai=receita_pai, nivel=2, sinal='positivo', ordem=1, ativo=True)
+        DREProjetado.objects.create(
+            empresa=empresa,
+            tipo_linha='conta',
+            conta_dre=receita_pai,
+            ano=2026,
+            mes=1,
+            valor=1000,
+        )
 
-        response = self.client.get(reverse('dashboard_dre_projetado', kwargs={'slug': empresa.slug_empresa}))
+        response = self.client.get(
+            reverse('dashboard_dre_projetado', kwargs={'slug': empresa.slug_empresa}),
+            {'periodo': 'ano:2026'},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dashboard2.html')
         self.assertContains(response, 'DRE vs Projetado')
         self.assertContains(response, 'Projetado')
         self.assertContains(response, 'Realizado')
+        self.assertContains(response, 'dreProjetadoContaSelect')
+        self.assertContains(response, 'Projetado vs Realizado')
+        self.assertEqual(response.context['grafico_projetado_realizado']['opcoes'][0]['nome'], 'Receita Bruta')
+        self.assertEqual(response.context['grafico_projetado_realizado']['opcoes'][0]['filhos'][0]['nome'], 'Receita Operacional')
+        self.assertEqual(response.context['grafico_projetado_realizado']['series'][0]['pontos'][0]['projetado'], 1000.0)
 
     def test_exportar_planilha_dre_projetado_traz_contas_e_categorias_sem_clientes(self):
         empresa = ParametroEmpresa.objects.create(

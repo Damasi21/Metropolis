@@ -933,6 +933,24 @@ body {
     min-height: 32px;
 }
 
+.dre-projetado-acoes {
+    line-height: 1;
+}
+
+.dre-projetado-acoes form {
+    align-items: center;
+}
+
+.dre-projetado-acoes .dre-planilha-btn,
+.dre-projetado-acoes .dre-fullscreen-btn {
+    height: 32px;
+}
+
+.dre-projetado-acoes .dre-planilha-btn {
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
 .dre-excel-icon {
     align-items: center;
     background: #1f7a43;
@@ -950,6 +968,144 @@ body {
 .dre-projetado-panel {
     margin-top: 0;
     min-width: 0;
+}
+
+.dre-projetado-grafico-card {
+    grid-column: 2;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.dre-projetado-grafico-topbar {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.dre-projetado-grafico-titulo {
+    color: #263238;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.legenda-linha {
+    display: inline-block;
+    height: 0;
+    margin-right: 5px;
+    vertical-align: middle;
+    width: 28px;
+}
+
+.legenda-projetado {
+    border-top: 2px dashed #6bb6da;
+}
+
+.legenda-realizado {
+    border-top: 2px solid #0d5f7d;
+}
+
+.dre-projetado-analisar {
+    align-items: center;
+    background: #eef8f8;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    color: #22313f;
+    display: flex;
+    flex: 0 1 430px;
+    gap: 10px;
+    margin: 0;
+    min-width: 260px;
+    padding: 7px 10px;
+}
+
+.dre-projetado-analisar strong {
+    font-size: 13px;
+    letter-spacing: 0;
+}
+
+.dre-projetado-analisar select {
+    background-color: #fff;
+    border: 1px solid #d7e7e7;
+    color: #333;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dre-projetado-analisar-icone {
+    border-bottom: 2px solid #1c4a5e;
+    border-top: 2px solid #1c4a5e;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 12px;
+    position: relative;
+    width: 18px;
+}
+
+.dre-projetado-analisar-icone::before {
+    border-top: 2px solid #1c4a5e;
+    content: "";
+    left: 4px;
+    position: absolute;
+    right: 0;
+    top: 3px;
+}
+
+.dre-projetado-linha-plot {
+    min-height: 260px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.dre-projetado-linha-svg {
+    display: block;
+    min-width: 760px;
+    width: 100%;
+}
+
+.dre-projetado-grid-line {
+    stroke: #d9d9d9;
+    stroke-dasharray: 2 4;
+}
+
+.dre-projetado-axis {
+    stroke: #8a8a8a;
+}
+
+.dre-projetado-line-projetado {
+    fill: none;
+    stroke: #65b5df;
+    stroke-dasharray: 6 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+.dre-projetado-line-realizado {
+    fill: none;
+    stroke: #0d5f7d;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+}
+
+.dre-projetado-point-projetado {
+    fill: #65b5df;
+}
+
+.dre-projetado-point-realizado {
+    fill: #0d5f7d;
+}
+
+.dre-projetado-point-label {
+    fill: #4a4a4a;
+    font-size: 11px;
+}
+
+.dre-projetado-mes-label {
+    fill: #606060;
+    font-size: 11px;
 }
 
 .tabela-dre-projetado {
@@ -1000,6 +1156,16 @@ body {
 
     .dre-projetado-divider {
         display: none;
+    }
+
+    .dre-projetado-grafico-card {
+        grid-column: 1;
+    }
+
+    .dre-projetado-grafico-topbar,
+    .dre-projetado-analisar {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 
