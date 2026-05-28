@@ -14,7 +14,7 @@
                     <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visão Geral</a>
                     <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
                     <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
-                    <a href="#" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="{% url 'dashboard_fluxo_caixa' slug=slug %}" class="btn menu-btn">Fluxo de Caixa</a>
                     <a href="#" class="btn menu-btn">Clientes</a>
                     <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
                 </div>

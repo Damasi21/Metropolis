@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fluxo de Caixa | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visao Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="{% url 'dashboard_fluxo_caixa' slug=slug %}" class="btn menu-btn active">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn">Parametros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                {% include 'topo_fluxo_caixa.html' with titulo_topo='Fluxo de caixa' %}
+
+                <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-xl-5 fluxo-kpis">
+                    <div class="col">
+                        <div class="card card-kpi indicador-tooltip" data-tooltip="Entradas no regime de caixa pelo vencimento" tabindex="0">
+                            <div class="card-body d-flex justify-content-between">
+                                <div>
+                                    <div class="kpi-titulo">Recebimentos</div>
+                                    <p class="kpi-valor">{{ kpis.recebimentos }}</p>
+                                </div>
+                                <div class="icone-kpi"><img src="{% static 'imagens/recebimento.png' %}" alt="Recebimentos"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card card-kpi indicador-tooltip" data-tooltip="Saidas no regime de caixa pelo vencimento" tabindex="0">
+                            <div class="card-body d-flex justify-content-between">
+                                <div>
+                                    <div class="kpi-titulo">Pagamentos</div>
+                                    <p class="kpi-valor">{{ kpis.pagamentos }}</p>
+                                </div>
+                                <div class="icone-kpi"><img src="{% static 'imagens/pagamento.png' %}" alt="Pagamentos"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card card-kpi indicador-tooltip" data-tooltip="Recebimentos menos pagamentos" tabindex="0">
+                            <div class="card-body d-flex justify-content-between">
+                                <div>
+                                    <div class="kpi-titulo">Resultado</div>
+                                    <p class="kpi-valor {% if '-' in kpis.resultado %}valor-negativo{% endif %}">{{ kpis.resultado }}</p>
+                                </div>
+                                <div class="icone-kpi"><img src="{% static 'imagens/resultado.png' %}" alt="Resultado"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card card-kpi indicador-tooltip" data-tooltip="Media de dias entre emissao e vencimento dos pagamentos" tabindex="0">
+                            <div class="card-body d-flex justify-content-between">
+                                <div>
+                                    <div class="kpi-titulo">Prazo medio Pagamento</div>
+                                    <p class="kpi-valor">{{ kpis.prazo_medio_pagamento }}<span class="fluxo-kpi-unidade"> dias</span></p>
+                                </div>
+                                <div class="icone-kpi"><img src="{% static 'imagens/abaixo.png' %}" alt="Prazo medio pagamento"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="card card-kpi indicador-tooltip" data-tooltip="Media de dias entre emissao e vencimento dos recebimentos" tabindex="0">
+                            <div class="card-body d-flex justify-content-between">
+                                <div>
+                                    <div class="kpi-titulo">Prazo medio Recebimento</div>
+                                    <p class="kpi-valor">{{ kpis.prazo_medio_recebimento }}<span class="fluxo-kpi-unidade"> dias</span></p>
+                                </div>
+                                <div class="icone-kpi"><img src="{% static 'imagens/acima.png' %}" alt="Prazo medio recebimento"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm dre-fullscreen-panel fluxo-panel" id="dreFullscreenPanel">
+                    <div class="card-body p-0">
+                        <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-2 flex-wrap gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <h5 class="fw-bold mb-1">Fluxo de Caixa</h5>
+                                <div class="d-flex gap-2 dre-acoes-nivel">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="dreExpandAllBtn">Expandir</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="dreCollapseAllBtn">Encolher</button>
+                                </div>
+                            </div>
+
+                            <button
+                                class="dre-fullscreen-btn"
+                                type="button"
+                                id="dreFullscreenBtn"
+                                aria-label="Abrir fluxo de caixa em tela cheia"
+                                title="Tela cheia"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="collapse show" id="painelDreTabela">
+                            <div class="dre-scroll-top" id="dreScrollTop">
+                                <div class="dre-scroll-top-inner" id="dreScrollTopInner"></div>
+                            </div>
+
+                            <div class="table-responsive" id="dreTableWrapper">
+                                <table class="table table-bordered align-middle mb-0 tabela-dre tabela-fluxo-caixa">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 340px;">Categoria</th>
+                                            {% for mes in meses_dre %}
+                                                <th colspan="2" class="text-center">{{ mes.rotulo }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            {% for mes in meses_dre %}
+                                                <th>Previsto</th>
+                                                <th>Realizado</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for linha in fluxo %}
+                                            <tr
+                                                class="fluxo-linha fluxo-linha-{{ linha.tipo }} {% if linha.nivel == 1 %}linha-pai{% else %}linha-filho{% endif %}"
+                                                data-row-id="{{ linha.id }}"
+                                                {% if linha.parent_id %}data-parent-id="{{ linha.parent_id }}"{% endif %}
+                                                {% if linha.parent_id %}style="display: none;"{% endif %}
+                                            >
+                                                <td class="{% if linha.nivel == 2 %}ps-4{% endif %}">
+                                                    {% if linha.possui_filhos %}
+                                                        <button
+                                                            type="button"
+                                                            class="dre-row-toggle"
+                                                            data-target-id="{{ linha.id }}"
+                                                            aria-expanded="false"
+                                                        >
+                                                            <span class="dre-row-toggle-icon">+</span>
+                                                        </button>
+                                                    {% else %}
+                                                        <span class="dre-row-toggle dre-row-toggle-placeholder"></span>
+                                                    {% endif %}
+                                                    {{ linha.nome }}
+                                                </td>
+                                                {% for mes in linha.meses %}
+                                                    <td class="{% if mes.previsto|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.previsto }}</td>
+                                                    <td class="{% if mes.realizado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.realizado }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="{{ fluxo_colspan }}" class="text-center text-muted py-4">
+                                                    Nenhuma categoria encontrada para montar o fluxo de caixa.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    {% if resultado_fluxo %}
+                                        <tfoot>
+                                            <tr class="fluxo-resultado-final">
+                                                <td>Resultado final</td>
+                                                {% for mes in resultado_fluxo %}
+                                                    <td class="{% if mes.previsto|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.previsto }}</td>
+                                                    <td class="{% if mes.realizado|slice:':1' == '-' %}valor-negativo{% endif %}">{{ mes.realizado }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                        </tfoot>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

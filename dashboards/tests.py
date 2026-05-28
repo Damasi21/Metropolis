@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from io import BytesIO
 from unittest.mock import patch
 
@@ -17,11 +18,17 @@ from .models import (
     DREProjetado,
     IndicadorConfiguracao,
     ParametroEmpresa,
+    PrevistoRealizadoCategoria,
 )
 from .forms import ContaDREForm
 from .omie import importar_clientes_fornecedores_omie
 from .omie import listar_contas_correntes_omie
-from .views import _construir_linhas_dre, _montar_opcoes_periodo, _resolver_meses_periodo
+from .views import (
+    _construir_linhas_dre,
+    _montar_linhas_fluxo_caixa,
+    _montar_opcoes_periodo,
+    _resolver_meses_periodo,
+)
 
 
 class PeriodoDashboardTestCase(TestCase):
@@ -639,6 +646,7 @@ class ParametrosOmieViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Parâmetros gerais')
         self.assertContains(response, 'Dashboard Resultado')
+        self.assertContains(response, 'Previsto / Realizado')
 
     @patch('dashboards.views.sincronizar_dados_omie')
     def test_salvar_credenciais_nao_dispara_sincronizacao(self, sincronizar_mock):
@@ -790,6 +798,134 @@ class OmieClientesFornecedoresImportacaoTestCase(TestCase):
         self.assertEqual(listar_mock.call_args.kwargs['call'], 'ListarClientes')
         self.assertIn('clientes_cadastro', listar_mock.call_args.kwargs['response_keys'])
         self.assertTrue(ClienteFornecedor.objects.filter(codigo_omie=202).exists())
+
+
+class PrevistoRealizadoViewTestCase(TestCase):
+    def setUp(self):
+        self.empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-previsto',
+            nome_empresa='Empresa Previsto',
+        )
+        Categoria.objects.create(codigo='1.01', descricao='Receitas')
+        self.categoria_receita = Categoria.objects.create(
+            codigo='1.01.01',
+            descricao='Venda de Produtos',
+        )
+        Categoria.objects.create(codigo='2.01', descricao='Despesas')
+        self.categoria_despesa = Categoria.objects.create(
+            codigo='2.01.01',
+            descricao='Fornecedores',
+        )
+        self.url = reverse('previsto_realizado', kwargs={'slug': self.empresa.slug_empresa})
+
+    def test_salva_projetado_por_categoria_no_mes(self):
+        response = self.client.post(
+            self.url,
+            data={
+                'ano': '2026',
+                'mes': '3',
+                'acao': 'salvar',
+                f'projetado_{self.categoria_receita.id}': '1500.25',
+                f'projetado_{self.categoria_despesa.id}': '750.10',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            PrevistoRealizadoCategoria.objects.get(
+                empresa=self.empresa,
+                categoria=self.categoria_receita,
+                ano=2026,
+                mes=3,
+            ).projetado,
+            Decimal('1500.25'),
+        )
+        self.assertFalse(
+            PrevistoRealizadoCategoria.objects.filter(
+                empresa=self.empresa,
+                categoria=self.categoria_receita,
+                ano=2026,
+                mes=4,
+            ).exists()
+        )
+
+    def test_replicar_copia_valores_para_os_meses_seguintes_do_ano(self):
+        response = self.client.post(
+            self.url,
+            data={
+                'ano': '2026',
+                'mes': '10',
+                'acao': 'replicar',
+                f'projetado_{self.categoria_receita.id}': '2000',
+                f'projetado_{self.categoria_despesa.id}': '1000',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        meses = list(
+            PrevistoRealizadoCategoria.objects.filter(
+                empresa=self.empresa,
+                categoria=self.categoria_receita,
+                ano=2026,
+            ).order_by('mes').values_list('mes', flat=True)
+        )
+        self.assertEqual(meses, [10, 11, 12])
+
+
+class FluxoCaixaViewTestCase(TestCase):
+    def test_resultado_final_soma_receitas_menos_despesas_por_mes(self):
+        empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-fluxo',
+            nome_empresa='Empresa Fluxo',
+        )
+        Categoria.objects.create(codigo='1.01', descricao='Receitas')
+        categoria_receita = Categoria.objects.create(
+            codigo='1.01.01',
+            descricao='Venda de Produtos',
+            categoria_superior='1.01',
+        )
+        Categoria.objects.create(codigo='2.01', descricao='Despesas')
+        categoria_despesa = Categoria.objects.create(
+            codigo='2.01.01',
+            descricao='Fornecedores',
+            categoria_superior='2.01',
+        )
+        PrevistoRealizadoCategoria.objects.create(
+            empresa=empresa,
+            categoria=categoria_receita,
+            ano=2026,
+            mes=3,
+            projetado=Decimal('1500.00'),
+        )
+        PrevistoRealizadoCategoria.objects.create(
+            empresa=empresa,
+            categoria=categoria_despesa,
+            ano=2026,
+            mes=3,
+            projetado=Decimal('500.00'),
+        )
+        ContaReceber.objects.create(
+            codigo_lancamento_omie=1,
+            codigo_categoria='1.01.01',
+            data_vencimento=date(2026, 3, 10),
+            valor_documento=Decimal('1000.00'),
+        )
+        ContaPagar.objects.create(
+            codigo_lancamento_omie=2,
+            codigo_categoria='2.01.01',
+            data_vencimento=date(2026, 3, 12),
+            valor_documento=Decimal('300.00'),
+        )
+
+        _, resultado_fluxo = _montar_linhas_fluxo_caixa(empresa, [{
+            'codigo': '2026-03',
+            'ano': 2026,
+            'mes': 3,
+            'rotulo': 'Marco',
+        }])
+
+        self.assertEqual(resultado_fluxo[0]['previsto'], 'R$ 1.000,00')
+        self.assertEqual(resultado_fluxo[0]['realizado'], 'R$ 700,00')
 
 
 class OmieContasCorrentesListagemTestCase(TestCase):

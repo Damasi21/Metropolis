@@ -32,6 +32,7 @@ from .models import (
     DREProjetado,
     IndicadorConfiguracao,
     ParametroEmpresa,
+    PrevistoRealizadoCategoria,
 )
 from .omie import sincronizar_dados_omie
 
@@ -552,6 +553,24 @@ def _converter_valor_planilha(valor):
     return Decimal(texto).quantize(Decimal('0.01'))
 
 
+def _converter_valor_formulario(valor):
+    if valor in (None, ''):
+        return Decimal('0')
+
+    texto = str(valor).strip()
+    if not texto:
+        return Decimal('0')
+
+    texto = texto.replace('R$', '').replace(' ', '')
+    if ',' in texto:
+        texto = texto.replace('.', '').replace(',', '.')
+
+    try:
+        return Decimal(texto).quantize(Decimal('0.01'))
+    except InvalidOperation:
+        return None
+
+
 def _resolver_meses_periodo(periodo_selecionado, data_inicial=None, data_final=None):
     hoje = date.today()
     meses = []
@@ -648,6 +667,60 @@ def _resolver_periodo_dashboard(request):
         'tipo_visualizacao': tipo_visualizacao,
         'tipo_visualizacao_label': configuracao_visualizacao['label'],
         'campo_data_periodo': configuracao_visualizacao['campo_data'],
+        'periodo_opcoes': opcoes,
+        'periodo_selecionado': periodo_selecionado,
+        'meses_dre': meses,
+        'periodo_legenda': legenda,
+        'mostrar_datas_personalizadas': periodo_selecionado == 'customizado',
+        'data_inicial': data_inicial.isoformat() if data_inicial else '',
+        'data_final': data_final.isoformat() if data_final else '',
+    }
+
+
+def _resolver_periodo_fluxo_caixa(request):
+    opcoes = _montar_opcoes_periodo('data_vencimento')
+    valores_validos = {opcao['valor'] for opcao in opcoes}
+    periodo_selecionado = request.GET.get('periodo') or f'ano:{date.today().year}'
+    data_inicial_str = request.GET.get('data_inicial', '')
+    data_final_str = request.GET.get('data_final', '')
+
+    if periodo_selecionado not in valores_validos:
+        periodo_selecionado = f'ano:{date.today().year}'
+
+    data_inicial = None
+    data_final = None
+
+    try:
+        if data_inicial_str:
+            data_inicial = date.fromisoformat(data_inicial_str)
+        if data_final_str:
+            data_final = date.fromisoformat(data_final_str)
+    except ValueError:
+        data_inicial = None
+        data_final = None
+
+    if periodo_selecionado == 'customizado':
+        if not data_inicial or not data_final:
+            hoje = date.today()
+            data_inicial = date(hoje.year, 1, 1)
+            data_final = hoje
+        elif data_inicial > data_final:
+            data_inicial, data_final = data_final, data_inicial
+
+    meses = _resolver_meses_periodo(periodo_selecionado, data_inicial, data_final)
+
+    if periodo_selecionado == 'customizado':
+        legenda = f'{data_inicial.strftime("%d/%m/%Y")} ate {data_final.strftime("%d/%m/%Y")}'
+    else:
+        legenda = next(
+            (opcao['label'] for opcao in opcoes if opcao['valor'] == periodo_selecionado),
+            periodo_selecionado,
+        )
+
+    return {
+        'tipo_visualizacao': 'caixa',
+        'tipo_visualizacao_label': 'Caixa',
+        'campo_data_periodo': 'data_vencimento',
         'periodo_opcoes': opcoes,
         'periodo_selecionado': periodo_selecionado,
         'meses_dre': meses,
@@ -1289,6 +1362,251 @@ def _montar_dados_visao_geral(meses_periodo, campo_data):
     }
 
 
+def _somar_previsto_fluxo(empresa, meses_periodo):
+    valores = {}
+    anos = {mes['ano'] for mes in meses_periodo}
+    meses = {mes['mes'] for mes in meses_periodo}
+
+    for item in PrevistoRealizadoCategoria.objects.filter(
+        empresa=empresa,
+        ano__in=anos,
+        mes__in=meses,
+    ).select_related('categoria'):
+        codigo_mes = f'{item.ano}-{item.mes:02d}'
+        valores.setdefault(item.categoria_id, _inicializar_valores_periodo(meses_periodo))
+        if codigo_mes in valores[item.categoria_id]:
+            valores[item.categoria_id][codigo_mes] = round(
+                valores[item.categoria_id][codigo_mes] + float(item.projetado or 0),
+                2,
+            )
+
+    return valores
+
+
+def _somar_realizado_fluxo(meses_periodo):
+    valores = {}
+    if not meses_periodo:
+        return valores
+
+    data_inicial, data_final = _limites_periodo_meses(meses_periodo)
+    meses_validos = {mes['codigo'] for mes in meses_periodo}
+
+    for modelo in (ContaReceber, ContaPagar):
+        queryset = (
+            modelo.objects.filter(data_vencimento__gte=data_inicial, data_vencimento__lte=data_final)
+            .exclude(valor_documento__isnull=True)
+            .only('data_vencimento', 'codigo_categoria', 'valor_documento')
+        )
+
+        for movimento in queryset.iterator():
+            if not movimento.data_vencimento:
+                continue
+
+            codigo_mes = f'{movimento.data_vencimento.year}-{movimento.data_vencimento.month:02d}'
+            codigo_categoria = (movimento.codigo_categoria or '').strip()
+            if codigo_mes not in meses_validos or not codigo_categoria:
+                continue
+
+            valores.setdefault(codigo_categoria, _inicializar_valores_periodo(meses_periodo))
+            valores[codigo_categoria][codigo_mes] = round(
+                valores[codigo_categoria][codigo_mes] + float(movimento.valor_documento or 0),
+                2,
+            )
+
+    return valores
+
+
+def _media_dias_fluxo(modelo, data_inicio, data_fim):
+    dias = []
+    queryset = modelo.objects.filter(
+        data_vencimento__gte=data_inicio,
+        data_vencimento__lte=data_fim,
+    ).only('data_emissao', 'data_vencimento')
+
+    for movimento in queryset.iterator():
+        if movimento.data_emissao and movimento.data_vencimento:
+            dias.append((movimento.data_vencimento - movimento.data_emissao).days)
+
+    return round(sum(dias) / len(dias)) if dias else 0
+
+
+def _montar_kpis_fluxo_caixa(meses_periodo):
+    data_inicial, data_final = _limites_periodo_meses(meses_periodo)
+    recebimentos = ContaReceber.objects.filter(
+        data_vencimento__gte=data_inicial,
+        data_vencimento__lte=data_final,
+    ).aggregate(total=Sum('valor_documento'))['total'] or Decimal('0')
+    pagamentos = ContaPagar.objects.filter(
+        data_vencimento__gte=data_inicial,
+        data_vencimento__lte=data_final,
+    ).aggregate(total=Sum('valor_documento'))['total'] or Decimal('0')
+    resultado = recebimentos - pagamentos
+
+    return {
+        'recebimentos': _formatar_moeda_resumida(recebimentos),
+        'pagamentos': _formatar_moeda_resumida(pagamentos),
+        'resultado': _formatar_moeda_resumida(resultado),
+        'prazo_medio_pagamento': _media_dias_fluxo(ContaPagar, data_inicial, data_final),
+        'prazo_medio_recebimento': _media_dias_fluxo(ContaReceber, data_inicial, data_final),
+    }
+
+
+def _montar_linhas_fluxo_caixa(empresa, meses_periodo):
+    categorias = [item for item in _listar_categorias_depara() if item['tipo'] in ('receita', 'despesa')]
+    categorias_por_codigo = {item['obj'].codigo: item['obj'] for item in categorias}
+    previstas_por_categoria = _somar_previsto_fluxo(empresa, meses_periodo)
+    realizadas_por_codigo = _somar_realizado_fluxo(meses_periodo)
+    linhas = []
+    resultado_previsto = _inicializar_valores_periodo(meses_periodo)
+    resultado_realizado = _inicializar_valores_periodo(meses_periodo)
+
+    def valores_categoria(categoria):
+        previsto = previstas_por_categoria.get(categoria.id, _inicializar_valores_periodo(meses_periodo)).copy()
+        realizado = realizadas_por_codigo.get(categoria.codigo, _inicializar_valores_periodo(meses_periodo)).copy()
+        return previsto, realizado
+
+    def montar_meses(previsto, realizado, multiplicador):
+        return [{
+            'rotulo': mes['rotulo'],
+            'mes': mes['mes'],
+            'ano': mes['ano'],
+            'previsto': _formatar_moeda(previsto[mes['codigo']] * multiplicador),
+            'realizado': _formatar_moeda(realizado[mes['codigo']] * multiplicador),
+        } for mes in meses_periodo]
+
+    def somar_valores(destino, origem):
+        for codigo in destino.keys():
+            destino[codigo] = round(destino[codigo] + origem.get(codigo, 0), 2)
+
+    def somar_resultado(previsto, realizado, multiplicador):
+        for codigo in resultado_previsto.keys():
+            resultado_previsto[codigo] = round(
+                resultado_previsto[codigo] + (previsto.get(codigo, 0) * multiplicador),
+                2,
+            )
+            resultado_realizado[codigo] = round(
+                resultado_realizado[codigo] + (realizado.get(codigo, 0) * multiplicador),
+                2,
+            )
+
+    pais = [item['obj'] for item in categorias if item['eh_pai']]
+    pais_codigos = {pai.codigo for pai in pais}
+    filhos_sem_pai = []
+
+    for item in categorias:
+        categoria = item['obj']
+        if item['eh_pai']:
+            continue
+
+        superior = (categoria.categoria_superior or '').strip()
+        possui_pai_por_codigo = any(categoria.codigo.startswith(f'{pai_codigo}.') for pai_codigo in pais_codigos)
+        if superior not in categorias_por_codigo and not possui_pai_por_codigo:
+            filhos_sem_pai.append(categoria)
+
+    for pai in pais:
+        filhos = [
+            item['obj']
+            for item in categorias
+            if not item['eh_pai']
+            and (
+                (item['obj'].categoria_superior or '').strip() == pai.codigo
+                or item['obj'].codigo.startswith(f'{pai.codigo}.')
+            )
+        ]
+        tipo = 'receita' if (pai.codigo or '').startswith('1') else 'despesa'
+        multiplicador = 1 if tipo == 'receita' else -1
+        previsto_pai = _inicializar_valores_periodo(meses_periodo)
+        realizado_pai = _inicializar_valores_periodo(meses_periodo)
+        detalhes = []
+
+        for filho in filhos:
+            previsto_filho, realizado_filho = valores_categoria(filho)
+            somar_valores(previsto_pai, previsto_filho)
+            somar_valores(realizado_pai, realizado_filho)
+            detalhes.append((filho, previsto_filho, realizado_filho))
+
+        if not filhos:
+            previsto_pai, realizado_pai = valores_categoria(pai)
+
+        somar_resultado(previsto_pai, realizado_pai, multiplicador)
+
+        linha_id = f'fluxo-categoria-{pai.id}'
+        linhas.append({
+            'id': linha_id,
+            'parent_id': '',
+            'nivel': 1,
+            'tipo': tipo,
+            'nome': pai.descricao,
+            'codigo': pai.codigo,
+            'meses': montar_meses(previsto_pai, realizado_pai, multiplicador),
+            'possui_filhos': bool(detalhes),
+            'expandido': False,
+        })
+
+        for filho, previsto_filho, realizado_filho in detalhes:
+            linhas.append({
+                'id': f'fluxo-categoria-{filho.id}',
+                'parent_id': linha_id,
+                'nivel': 2,
+                'tipo': tipo,
+                'nome': filho.descricao,
+                'codigo': filho.codigo,
+                'meses': montar_meses(previsto_filho, realizado_filho, multiplicador),
+                'possui_filhos': False,
+                'expandido': False,
+            })
+
+    for tipo, titulo, prefixo in (
+        ('receita', 'Receitas sem grupo', '1'),
+        ('despesa', 'Despesas sem grupo', '2'),
+    ):
+        filhos_tipo = [categoria for categoria in filhos_sem_pai if (categoria.codigo or '').startswith(prefixo)]
+        if not filhos_tipo:
+            continue
+
+        multiplicador = 1 if tipo == 'receita' else -1
+        previsto_pai = _inicializar_valores_periodo(meses_periodo)
+        realizado_pai = _inicializar_valores_periodo(meses_periodo)
+        detalhes = []
+        for filho in filhos_tipo:
+            previsto_filho, realizado_filho = valores_categoria(filho)
+            somar_valores(previsto_pai, previsto_filho)
+            somar_valores(realizado_pai, realizado_filho)
+            detalhes.append((filho, previsto_filho, realizado_filho))
+
+        somar_resultado(previsto_pai, realizado_pai, multiplicador)
+
+        linha_id = f'fluxo-{tipo}-sem-grupo'
+        linhas.append({
+            'id': linha_id,
+            'parent_id': '',
+            'nivel': 1,
+            'tipo': tipo,
+            'nome': titulo,
+            'codigo': '',
+            'meses': montar_meses(previsto_pai, realizado_pai, multiplicador),
+            'possui_filhos': True,
+            'expandido': False,
+        })
+
+        for filho, previsto_filho, realizado_filho in detalhes:
+            linhas.append({
+                'id': f'fluxo-categoria-{filho.id}',
+                'parent_id': linha_id,
+                'nivel': 2,
+                'tipo': tipo,
+                'nome': filho.descricao,
+                'codigo': filho.codigo,
+                'meses': montar_meses(previsto_filho, realizado_filho, multiplicador),
+                'possui_filhos': False,
+                'expandido': False,
+            })
+
+    resultado_meses = montar_meses(resultado_previsto, resultado_realizado, 1)
+
+    return linhas, resultado_meses
+
+
 def _montar_ranking_clientes_fornecedores(meses_periodo, campo_data):
     data_inicial, data_final = _limites_periodo_meses(meses_periodo)
     codigos = set()
@@ -1588,6 +1906,23 @@ def dashboard_resultado(request, slug):
     return render(request, 'dashboard.html', contexto)
 
 
+def dashboard_fluxo_caixa(request, slug):
+    empresa = _get_parametro_empresa(slug)
+    periodo_contexto = _resolver_periodo_fluxo_caixa(request)
+    fluxo, resultado_fluxo = _montar_linhas_fluxo_caixa(empresa, periodo_contexto['meses_dre'])
+
+    contexto = {
+        'slug': slug,
+        'empresa_nome': empresa.nome_empresa,
+        'kpis': _montar_kpis_fluxo_caixa(periodo_contexto['meses_dre']),
+        'fluxo': fluxo,
+        'resultado_fluxo': resultado_fluxo,
+        'fluxo_colspan': 1 + (len(periodo_contexto['meses_dre']) * 2),
+        **periodo_contexto,
+    }
+    return render(request, 'fluxo_caixa.html', contexto)
+
+
 def exportar_planilha_dre_projetado(request, slug):
     empresa = _get_parametro_empresa(slug)
     periodo_contexto = _resolver_periodo_dashboard(request)
@@ -1795,6 +2130,105 @@ def parametros_resultado(request, slug):
         'empresa': empresa,
     }
     return render(request, 'parametros_resultado.html', contexto)
+
+
+def previsto_realizado(request, slug):
+    empresa = _get_parametro_empresa(slug)
+    hoje = date.today()
+
+    try:
+        ano = int(request.GET.get('ano') or request.POST.get('ano') or hoje.year)
+    except (TypeError, ValueError):
+        ano = hoje.year
+
+    try:
+        mes = int(request.GET.get('mes') or request.POST.get('mes') or hoje.month)
+    except (TypeError, ValueError):
+        mes = hoje.month
+
+    ano_atual = hoje.year
+    if ano < ano_atual - 5 or ano > ano_atual + 6:
+        ano = ano_atual
+
+    if mes < 1 or mes > 12:
+        mes = hoje.month
+
+    categorias = [
+        item['obj']
+        for item in _listar_categorias_depara()
+        if not item['eh_pai']
+    ]
+
+    valores_por_categoria = {
+        item.categoria_id: item.projetado
+        for item in PrevistoRealizadoCategoria.objects.filter(
+            empresa=empresa,
+            ano=ano,
+            mes=mes,
+            categoria__in=categorias,
+        )
+    }
+
+    if request.method == 'POST':
+        erros = []
+        valores_digitados = {}
+
+        for categoria in categorias:
+            campo = f'projetado_{categoria.id}'
+            valor = _converter_valor_formulario(request.POST.get(campo))
+            if valor is None:
+                erros.append(f'Valor invalido para {categoria.codigo} - {categoria.descricao}.')
+                continue
+            valores_digitados[categoria.id] = valor
+
+        if erros:
+            for erro in erros:
+                messages.error(request, erro)
+        else:
+            acao = request.POST.get('acao')
+            meses_destino = [mes]
+            mensagem = 'Previsto / realizado salvo com sucesso.'
+
+            if acao == 'replicar':
+                meses_destino = list(range(mes, 13))
+                mensagem = 'Valores replicados para os proximos meses do ano.'
+
+            with transaction.atomic():
+                categorias_por_id = {categoria.id: categoria for categoria in categorias}
+                for mes_destino in meses_destino:
+                    for categoria_id, valor in valores_digitados.items():
+                        PrevistoRealizadoCategoria.objects.update_or_create(
+                            empresa=empresa,
+                            categoria=categorias_por_id[categoria_id],
+                            ano=ano,
+                            mes=mes_destino,
+                            defaults={'projetado': valor},
+                        )
+
+            messages.success(request, mensagem)
+            return redirect(f"{reverse('previsto_realizado', kwargs={'slug': slug})}?ano={ano}&mes={mes}")
+
+        valores_por_categoria = valores_digitados
+
+    categorias_linhas = []
+    for categoria in categorias:
+        categorias_linhas.append({
+            'categoria': categoria,
+            'projetado': valores_por_categoria.get(categoria.id, Decimal('0')),
+        })
+
+    contexto = {
+        'slug': slug,
+        'empresa_nome': empresa.nome_empresa,
+        'empresa': empresa,
+        'ano': ano,
+        'mes': mes,
+        'mes_nome': MESES_LABELS[mes],
+        'anos': range(ano_atual - 1, ano_atual + 6),
+        'meses': [{'numero': numero, 'nome': MESES_LABELS[numero]} for numero in range(1, 13)],
+        'categorias_linhas': categorias_linhas,
+    }
+    return render(request, 'previsto_realizado.html', contexto)
 
 
 def parametros_gerais(request, slug):

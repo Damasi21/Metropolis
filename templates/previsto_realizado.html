@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Previsto / Realizado | {{ empresa_nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 mb-4">
+            <div class="bg-white shadow-sm rounded p-3">
+                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+
+                <div class="d-grid gap-2 menu-lateral">
+                    <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visao Geral</a>
+                    <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
+                    <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
+                    <a href="{% url 'dashboard_fluxo_caixa' slug=slug %}" class="btn menu-btn">Fluxo de Caixa</a>
+                    <a href="#" class="btn menu-btn">Clientes</a>
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parametros</a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-md-10">
+            <div class="bg-white shadow-sm rounded p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">Previsto / Realizado</h4>
+                        <p class="text-muted mb-0">
+                            Valores projetados por categoria para {{ mes_nome }} de {{ ano }}.
+                        </p>
+                    </div>
+
+                    <a href="{% url 'parametros_empresa' slug=slug %}" class="btn btn-outline-secondary">
+                        Voltar
+                    </a>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}secondary{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="get" class="row g-3 align-items-end mb-4">
+                    <div class="col-md-3">
+                        <label for="anoFiltro" class="form-label fw-semibold">Ano</label>
+                        <select id="anoFiltro" name="ano" class="form-select">
+                            {% for ano_opcao in anos %}
+                                <option value="{{ ano_opcao }}" {% if ano_opcao == ano %}selected{% endif %}>
+                                    {{ ano_opcao }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="mesFiltro" class="form-label fw-semibold">Mes</label>
+                        <select id="mesFiltro" name="mes" class="form-select">
+                            {% for mes_opcao in meses %}
+                                <option value="{{ mes_opcao.numero }}" {% if mes_opcao.numero == mes %}selected{% endif %}>
+                                    {{ mes_opcao.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            Filtrar
+                        </button>
+                    </div>
+                </form>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="ano" value="{{ ano }}">
+                    <input type="hidden" name="mes" value="{{ mes }}">
+
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 18%;">Codigo</th>
+                                            <th>Categoria filha</th>
+                                            <th style="width: 240px;">Projetado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for linha in categorias_linhas %}
+                                            <tr>
+                                                <td class="fw-semibold">{{ linha.categoria.codigo }}</td>
+                                                <td>{{ linha.categoria.descricao }}</td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        name="projetado_{{ linha.categoria.id }}"
+                                                        class="form-control text-end"
+                                                        min="-999999999999"
+                                                        max="999999999999"
+                                                        step="0.01"
+                                                        value="{{ linha.projetado|stringformat:'.2f' }}"
+                                                    >
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-4">
+                                                    Nenhuma categoria filha encontrada.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-end gap-2 flex-wrap">
+                        <button type="submit" name="acao" value="replicar" class="btn btn-outline-primary px-4">
+                            Replicar para os proximos meses
+                        </button>
+
+                        <button type="submit" name="acao" value="salvar" class="btn btn-primary px-4">
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}
