@@ -1441,3 +1441,41 @@ class DREProjetado(models.Model):
 
     def __str__(self):
         return f'{self.empresa} - {self.ano}/{self.mes:02d} - {self.conta_dre} - {self.valor}'
+
+
+class PrevistoRealizadoCategoria(models.Model):
+    empresa = models.ForeignKey(
+        ParametroEmpresa,
+        on_delete=models.CASCADE,
+        related_name='previstos_realizados_categoria',
+        verbose_name='Empresa',
+    )
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.CASCADE,
+        related_name='previstos_realizados',
+        verbose_name='Categoria',
+    )
+    ano = models.PositiveSmallIntegerField(verbose_name='Ano')
+    mes = models.PositiveSmallIntegerField(verbose_name='Mes')
+    projetado = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        verbose_name='Projetado',
+    )
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Previsto / Realizado por Categoria'
+        verbose_name_plural = 'Previsto / Realizado por Categoria'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['empresa', 'categoria', 'ano', 'mes'],
+                name='uniq_previsto_realizado_categoria_mes',
+            ),
+        ]
+        ordering = ['ano', 'mes', 'categoria__codigo']
+
+    def __str__(self):
+        return f'{self.empresa} - {self.categoria} - {self.ano}/{self.mes:02d} - {self.projetado}'

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inicializarModalExclusao();
     inicializarModalMensagem();
     inicializarSenhaVisivel();
+    inicializarTopoFiltros();
     inicializarFiltroPeriodo();
     inicializarDashboardResultado();
     inicializarDashboardVisaoGeral();
@@ -89,6 +90,32 @@ function inicializarSenhaVisivel() {
             button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
         });
     });
+}
+
+function inicializarTopoFiltros() {
+    const painel = document.getElementById('painelFiltrosDashboard');
+    const botao = document.querySelector('[data-bs-target="#painelFiltrosDashboard"]');
+
+    if (!painel || !botao) {
+        return;
+    }
+
+    function atualizarIcone(expandido) {
+        const icone = botao.querySelector('.fs-6');
+        if (icone) {
+            icone.textContent = expandido ? 'v' : '>';
+        }
+    }
+
+    painel.addEventListener('shown.bs.collapse', function () {
+        atualizarIcone(true);
+    });
+
+    painel.addEventListener('hidden.bs.collapse', function () {
+        atualizarIcone(false);
+    });
+
+    atualizarIcone(painel.classList.contains('show'));
 }
 
 function inicializarFiltroPeriodo() {

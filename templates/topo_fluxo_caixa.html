@@ -1,51 +1,16 @@
 <form method="get" class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-
-            <button
-                class="titulo-toggle d-flex align-items-center gap-2"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#painelFiltrosDashboard"
-                aria-expanded="false"
-                aria-controls="painelFiltrosDashboard"
-            >
-                <span>{{ titulo_topo }}</span>
-                <span class="fs-6">></span>
-            </button>
-
-            <div class="d-flex align-items-center gap-4 radio-visao-geral">
-                <div class="form-check mb-0">
-                    <input
-                        class="form-check-input"
-                        type="radio"
-                        name="tipo_visualizacao"
-                        id="tipoCaixa"
-                        value="caixa"
-                        {% if tipo_visualizacao == 'caixa' %}checked{% endif %}
-                        onchange="this.form.submit()"
-                    >
-                    <label class="form-check-label" for="tipoCaixa">
-                        Caixa
-                    </label>
-                </div>
-
-                <div class="form-check mb-0">
-                    <input
-                        class="form-check-input"
-                        type="radio"
-                        name="tipo_visualizacao"
-                        id="tipoCompetencia"
-                        value="competencia"
-                        {% if tipo_visualizacao == 'competencia' %}checked{% endif %}
-                        onchange="this.form.submit()"
-                    >
-                    <label class="form-check-label" for="tipoCompetencia">
-                        Competência
-                    </label>
-                </div>
-            </div>
-        </div>
+        <button
+            class="titulo-toggle d-flex align-items-center gap-2"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#painelFiltrosDashboard"
+            aria-expanded="false"
+            aria-controls="painelFiltrosDashboard"
+        >
+            <span>{{ titulo_topo }}</span>
+            <span class="fs-6">></span>
+        </button>
     </div>
 
     <div class="collapse" id="painelFiltrosDashboard">
@@ -73,7 +38,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold">Período</label>
+                    <label class="form-label fw-semibold">Periodo</label>
                     <input type="hidden" name="periodo" value="{{ periodo_selecionado }}" data-periodo-input>
                     <div class="periodo-tree" data-periodo-tree>
                         <button
@@ -128,12 +93,12 @@
                 </div>
 
                 <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-primary">Aplicar período</button>
+                    <button type="submit" class="btn btn-primary">Aplicar periodo</button>
                 </div>
             {% else %}
                 <div class="d-flex justify-content-end mt-3">
                     <small class="text-muted">
-                        Período selecionado: {{ periodo_legenda }} | Baseado em {{ tipo_visualizacao_label }}
+                        Periodo selecionado: {{ periodo_legenda }} | Baseado em caixa
                     </small>
                 </div>
             {% endif %}

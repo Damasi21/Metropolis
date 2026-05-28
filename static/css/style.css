@@ -1137,6 +1137,101 @@ body {
     min-width: 116px;
 }
 
+.fluxo-kpis .card-kpi .card-body {
+    min-height: 104px;
+}
+
+.fluxo-kpis .kpi-titulo {
+    color: #6f767c;
+    font-size: 15px;
+}
+
+.fluxo-kpis .kpi-valor {
+    color: #30353a;
+    font-size: 19px;
+    line-height: 1.15;
+}
+
+.fluxo-kpi-unidade {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.fluxo-panel {
+    overflow: hidden;
+}
+
+.tabela-fluxo-caixa {
+    min-width: 1180px;
+}
+
+.tabela-fluxo-caixa td {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tabela-fluxo-caixa td:first-child {
+    color: #444;
+    text-align: left;
+}
+
+.tabela-fluxo-caixa thead th {
+    background: #f4f8fb;
+    color: #20343d;
+}
+
+.tabela-fluxo-caixa thead tr:first-child th {
+    border-top: 3px solid #18a7b8;
+}
+
+.tabela-fluxo-caixa tfoot td {
+    background: #eef6f2;
+    border-top: 3px solid #17845f;
+    color: #173f33;
+    font-weight: 800;
+    text-align: right;
+}
+
+.tabela-fluxo-caixa tfoot td:first-child {
+    color: #173f33;
+    text-align: left;
+}
+
+.tabela-fluxo-caixa tfoot td.valor-negativo {
+    color: #c7333a;
+}
+
+.tabela-fluxo-caixa .linha-pai td {
+    font-weight: 700;
+}
+
+.tabela-fluxo-caixa .fluxo-linha-receita.linha-pai td {
+    color: #095f96;
+}
+
+.tabela-fluxo-caixa .fluxo-linha-despesa.linha-pai td {
+    color: #b4232a;
+}
+
+.tabela-fluxo-caixa .fluxo-linha-receita.linha-filho td:first-child {
+    color: #0d70ad;
+}
+
+.tabela-fluxo-caixa .fluxo-linha-despesa.linha-filho td:first-child {
+    color: #c7333a;
+}
+
+.fluxo-categoria-codigo {
+    color: inherit;
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+    min-width: 54px;
+    opacity: 0.72;
+}
+
 @media (max-width: 991.98px) {
     .dre-projetado-layout {
         grid-template-columns: minmax(0, 1fr);
