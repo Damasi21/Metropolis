@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     inicializarMenuLateral();
     inicializarModalExclusao();
     inicializarModalMensagem();
+    inicializarTema();
     inicializarSenhaVisivel();
     inicializarTopoFiltros();
     inicializarFiltroPeriodo();
@@ -56,6 +57,40 @@ function inicializarModalMensagem() {
 
     const modal = new bootstrap.Modal(modalMensagem);
     modal.show();
+}
+
+function inicializarTema() {
+    const button = document.getElementById('themeToggleBtn');
+    if (!button) {
+        return;
+    }
+
+    const text = button.querySelector('.theme-toggle-text');
+
+    function aplicarRotulo() {
+        const temaAtual = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        if (text) {
+            text.textContent = temaAtual === 'dark' ? 'Light' : 'Dark';
+        }
+        button.setAttribute(
+            'aria-label',
+            temaAtual === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'
+        );
+        button.setAttribute(
+            'title',
+            temaAtual === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'
+        );
+    }
+
+    aplicarRotulo();
+
+    button.addEventListener('click', function () {
+        const temaAtual = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const proximoTema = temaAtual === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', proximoTema);
+        localStorage.setItem('metropolis-tema', proximoTema);
+        aplicarRotulo();
+    });
 }
 
 function inicializarSenhaVisivel() {

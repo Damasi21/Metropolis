@@ -871,6 +871,46 @@ class PrevistoRealizadoViewTestCase(TestCase):
         )
         self.assertEqual(meses, [10, 11, 12])
 
+    def test_sugestao_preenche_com_lancamentos_do_mes_anterior_sem_salvar(self):
+        ContaReceber.objects.create(
+            codigo_lancamento_omie=101,
+            codigo_categoria='1.01.01',
+            data_vencimento=date(2026, 3, 10),
+            valor_documento=Decimal('3500.50'),
+        )
+        ContaPagar.objects.create(
+            codigo_lancamento_omie=102,
+            codigo_categoria='2.01.01',
+            data_vencimento=date(2026, 3, 12),
+            valor_documento=Decimal('800.25'),
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                'ano': '2026',
+                'mes': '4',
+                'acao': 'sugestao',
+                f'projetado_{self.categoria_receita.id}': '0',
+                f'projetado_{self.categoria_despesa.id}': '0',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        linhas = {
+            linha['categoria'].id: linha['projetado']
+            for linha in response.context['categorias_linhas']
+        }
+        self.assertEqual(linhas[self.categoria_receita.id], Decimal('3500.50'))
+        self.assertEqual(linhas[self.categoria_despesa.id], Decimal('800.25'))
+        self.assertFalse(
+            PrevistoRealizadoCategoria.objects.filter(
+                empresa=self.empresa,
+                ano=2026,
+                mes=4,
+            ).exists()
+        )
+
 
 class FluxoCaixaViewTestCase(TestCase):
     def test_resultado_final_soma_receitas_menos_despesas_por_mes(self):

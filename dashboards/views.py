@@ -2172,43 +2172,70 @@ def previsto_realizado(request, slug):
     if request.method == 'POST':
         erros = []
         valores_digitados = {}
+        acao = request.POST.get('acao')
 
-        for categoria in categorias:
-            campo = f'projetado_{categoria.id}'
-            valor = _converter_valor_formulario(request.POST.get(campo))
-            if valor is None:
-                erros.append(f'Valor invalido para {categoria.codigo} - {categoria.descricao}.')
-                continue
-            valores_digitados[categoria.id] = valor
+        if acao == 'sugestao':
+            if mes == 1:
+                ano_referencia = ano - 1
+                mes_referencia = 12
+            else:
+                ano_referencia = ano
+                mes_referencia = mes - 1
 
-        if erros:
-            for erro in erros:
-                messages.error(request, erro)
+            mes_periodo_referencia = [{
+                'codigo': f'{ano_referencia}-{mes_referencia:02d}',
+                'ano': ano_referencia,
+                'mes': mes_referencia,
+                'rotulo': MESES_LABELS[mes_referencia],
+            }]
+            realizados_por_codigo = _somar_realizado_fluxo(mes_periodo_referencia)
+            codigo_mes_referencia = mes_periodo_referencia[0]['codigo']
+            valores_por_categoria = {
+                categoria.id: Decimal(
+                    str(realizados_por_codigo.get(categoria.codigo, {}).get(codigo_mes_referencia, 0))
+                ).quantize(Decimal('0.01'))
+                for categoria in categorias
+            }
+            messages.success(
+                request,
+                f'Sugestao preenchida com os lancamentos de {MESES_LABELS[mes_referencia]} de {ano_referencia}.',
+            )
         else:
-            acao = request.POST.get('acao')
-            meses_destino = [mes]
-            mensagem = 'Previsto / realizado salvo com sucesso.'
+            for categoria in categorias:
+                campo = f'projetado_{categoria.id}'
+                valor = _converter_valor_formulario(request.POST.get(campo))
+                if valor is None:
+                    erros.append(f'Valor invalido para {categoria.codigo} - {categoria.descricao}.')
+                    continue
+                valores_digitados[categoria.id] = valor
 
-            if acao == 'replicar':
-                meses_destino = list(range(mes, 13))
-                mensagem = 'Valores replicados para os proximos meses do ano.'
+            if erros:
+                for erro in erros:
+                    messages.error(request, erro)
+            else:
+                meses_destino = [mes]
+                mensagem = 'Previsto / realizado salvo com sucesso.'
 
-            with transaction.atomic():
-                categorias_por_id = {categoria.id: categoria for categoria in categorias}
-                for mes_destino in meses_destino:
-                    for categoria_id, valor in valores_digitados.items():
-                        PrevistoRealizadoCategoria.objects.update_or_create(
-                            empresa=empresa,
-                            categoria=categorias_por_id[categoria_id],
-                            ano=ano,
-                            mes=mes_destino,
-                            defaults={'projetado': valor},
-                        )
+                if acao == 'replicar':
+                    meses_destino = list(range(mes, 13))
+                    mensagem = 'Valores replicados para os proximos meses do ano.'
 
-            messages.success(request, mensagem)
-            return redirect(f"{reverse('previsto_realizado', kwargs={'slug': slug})}?ano={ano}&mes={mes}")
+                with transaction.atomic():
+                    categorias_por_id = {categoria.id: categoria for categoria in categorias}
+                    for mes_destino in meses_destino:
+                        for categoria_id, valor in valores_digitados.items():
+                            PrevistoRealizadoCategoria.objects.update_or_create(
+                                empresa=empresa,
+                                categoria=categorias_por_id[categoria_id],
+                                ano=ano,
+                                mes=mes_destino,
+                                defaults={'projetado': valor},
+                            )
 
-        valores_por_categoria = valores_digitados
+                messages.success(request, mensagem)
+                return redirect(f"{reverse('previsto_realizado', kwargs={'slug': slug})}?ano={ano}&mes={mes}")
+
+            valores_por_categoria = valores_digitados
 
     categorias_linhas = []
     for categoria in categorias:

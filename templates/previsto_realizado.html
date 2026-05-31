@@ -44,37 +44,75 @@
                     {% endfor %}
                 {% endif %}
 
-                <form method="get" class="row g-3 align-items-end mb-4">
-                    <div class="col-md-3">
-                        <label for="anoFiltro" class="form-label fw-semibold">Ano</label>
-                        <select id="anoFiltro" name="ano" class="form-select">
-                            {% for ano_opcao in anos %}
-                                <option value="{{ ano_opcao }}" {% if ano_opcao == ano %}selected{% endif %}>
-                                    {{ ano_opcao }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="row g-3 align-items-end mb-4">
+                    <form method="get" class="col-md-6 col-lg-5">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-4">
+                                <label for="anoFiltro" class="form-label fw-semibold">Ano</label>
+                                <select id="anoFiltro" name="ano" class="form-select">
+                                    {% for ano_opcao in anos %}
+                                        <option value="{{ ano_opcao }}" {% if ano_opcao == ano %}selected{% endif %}>
+                                            {{ ano_opcao }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-                    <div class="col-md-4">
-                        <label for="mesFiltro" class="form-label fw-semibold">Mes</label>
-                        <select id="mesFiltro" name="mes" class="form-select">
-                            {% for mes_opcao in meses %}
-                                <option value="{{ mes_opcao.numero }}" {% if mes_opcao.numero == mes %}selected{% endif %}>
-                                    {{ mes_opcao.nome }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                            <div class="col-5">
+                                <label for="mesFiltro" class="form-label fw-semibold">Mes</label>
+                                <select id="mesFiltro" name="mes" class="form-select">
+                                    {% for mes_opcao in meses %}
+                                        <option value="{{ mes_opcao.numero }}" {% if mes_opcao.numero == mes %}selected{% endif %}>
+                                            {{ mes_opcao.nome }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary w-100">
-                            Filtrar
-                        </button>
-                    </div>
-                </form>
+                            <div class="col-3">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
 
-                <form method="post">
+                    <div class="col-md-6 col-lg-7">
+                        <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                            <button
+                                type="submit"
+                                form="previstoRealizadoForm"
+                                name="acao"
+                                value="sugestao"
+                                class="btn btn-outline-secondary px-3"
+                            >
+                                Sugestao
+                            </button>
+
+                            <button
+                                type="submit"
+                                form="previstoRealizadoForm"
+                                name="acao"
+                                value="replicar"
+                                class="btn btn-outline-primary px-3"
+                            >
+                                Replicar
+                            </button>
+
+                            <button
+                                type="submit"
+                                form="previstoRealizadoForm"
+                                name="acao"
+                                value="salvar"
+                                class="btn btn-primary px-4"
+                            >
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" id="previstoRealizadoForm">
                     {% csrf_token %}
                     <input type="hidden" name="ano" value="{{ ano }}">
                     <input type="hidden" name="mes" value="{{ mes }}">
@@ -120,15 +158,6 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 d-flex justify-content-end gap-2 flex-wrap">
-                        <button type="submit" name="acao" value="replicar" class="btn btn-outline-primary px-4">
-                            Replicar para os proximos meses
-                        </button>
-
-                        <button type="submit" name="acao" value="salvar" class="btn btn-primary px-4">
-                            Salvar
-                        </button>
-                    </div>
                 </form>
             </div>
         </section>
