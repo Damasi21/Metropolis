@@ -8,7 +8,7 @@
 
         <aside class="col-md-2 mb-4">
             <div class="bg-white shadow-sm rounded p-3">
-                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+                {% include 'includes/empresa_sidebar_brand.html' %}
 
                 <div class="d-grid gap-2 menu-lateral">
                     <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn">Visao Geral</a>

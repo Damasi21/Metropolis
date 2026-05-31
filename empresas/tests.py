@@ -41,3 +41,27 @@ class ConfiguracoesEmpresasTests(TestCase):
                 nome_empresa='Empresa Legada',
             ).exists()
         )
+
+    def test_dashboard_exibe_logo_da_empresa_no_menu_lateral(self):
+        Empresa.objects.create(
+            nome='Empresa com Logo',
+            slug='empresa-com-logo',
+            logo='logos/empresa-com-logo.png',
+            ativo=True,
+        )
+
+        response = self.client.get(reverse('dashboard_empresa', kwargs={'slug': 'empresa-com-logo'}))
+
+        self.assertContains(response, 'src="/media/logos/empresa-com-logo.png"')
+        self.assertContains(response, 'class="empresa-sidebar-logo"')
+
+    def test_dashboard_exibe_nome_da_empresa_quando_nao_houver_logo(self):
+        Empresa.objects.create(
+            nome='Empresa sem Logo',
+            slug='empresa-sem-logo',
+            ativo=True,
+        )
+
+        response = self.client.get(reverse('dashboard_empresa', kwargs={'slug': 'empresa-sem-logo'}))
+
+        self.assertContains(response, '<h5 class="fw-bold mb-3">Empresa sem Logo</h5>', html=True)
