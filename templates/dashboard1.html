@@ -10,7 +10,7 @@
         <!-- MENU -->
         <aside class="col-md-2 mb-4">
             <div class="bg-white shadow-sm rounded p-3">
-                <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+                {% include 'includes/empresa_sidebar_brand.html' %}
 
                 <div class="d-grid gap-2 menu-lateral">
                     <a href="{% url 'dashboard_empresa' slug=slug %}" class="btn menu-btn active">Visao Geral</a>
@@ -32,80 +32,76 @@
 
                 <div class="visao-geral-layout">
                     <!-- KPIs -->
-                    <div class="row g-4 align-items-stretch">
+                    <div class="visao-geral-kpis">
 
-                        <div class="col-xl-9">
-                            <div class="row g-4 h-100">
+                        <div class="visao-geral-kpis-principais">
 
-                                <div class="col-md-4">
-                                    <div class="card card-kpi indicador-tooltip" data-tooltip="Todas as receitas da empresa&#10;Origem: Contas a Receber" tabindex="0" aria-label="Recebimentos. Todas as receitas da empresa. Origem: Contas a Receber">
-                                        <div class="card-body d-flex justify-content-between">
-                                            <div>
-                                                <div class="kpi-titulo">Recebimentos</div>
-                                                <p class="kpi-valor">{{ kpis.recebimentos }}</p>
-                                            </div>
-                                            <div class="icone-kpi">
-                                                <img src="{% static 'imagens/recebimento.png' %}" alt="Recebimentos">
-                                            </div>
+                            <div>
+                                <div class="card card-kpi indicador-tooltip" data-tooltip="Todas as receitas da empresa&#10;Origem: Contas a Receber" tabindex="0" aria-label="Recebimentos. Todas as receitas da empresa. Origem: Contas a Receber">
+                                    <div class="card-body d-flex justify-content-between">
+                                        <div>
+                                            <div class="kpi-titulo">Recebimentos</div>
+                                            <p class="kpi-valor">{{ kpis.recebimentos }}</p>
+                                        </div>
+                                        <div class="icone-kpi">
+                                            <img src="{% static 'imagens/recebimento.png' %}" alt="Recebimentos">
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="col-md-4">
-                                    <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
-                                        <div class="card-body d-flex justify-content-between">
-                                            <div>
-                                                <div class="kpi-titulo">Pagamentos</div>
-                                                <p class="kpi-valor">{{ kpis.pagamentos }}</p>
-                                            </div>
-                                            <div class="icone-kpi">
-                                                <img src="{% static 'imagens/pagamento.png' %}" alt="Pagamentos">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
-                                        <div class="card-body d-flex justify-content-between">
-                                            <div>
-                                                <div class="kpi-titulo">Resultado</div>
-                                                <p class="kpi-valor {% if '-' in kpis.resultado %}valor-negativo{% endif %}">{{ kpis.resultado }}</p>
-                                            </div>
-                                            <div class="icone-kpi">
-                                                <img src="{% static 'imagens/resultado.png' %}" alt="Resultado">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                             </div>
+
+                            <div>
+                                <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
+                                    <div class="card-body d-flex justify-content-between">
+                                        <div>
+                                            <div class="kpi-titulo">Pagamentos</div>
+                                            <p class="kpi-valor">{{ kpis.pagamentos }}</p>
+                                        </div>
+                                        <div class="icone-kpi">
+                                            <img src="{% static 'imagens/pagamento.png' %}" alt="Pagamentos">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="card card-kpi indicador-tooltip" data-tooltip="" tabindex="0">
+                                    <div class="card-body d-flex justify-content-between">
+                                        <div>
+                                            <div class="kpi-titulo">Resultado</div>
+                                            <p class="kpi-valor {% if '-' in kpis.resultado %}valor-negativo{% endif %}">{{ kpis.resultado }}</p>
+                                        </div>
+                                        <div class="icone-kpi">
+                                            <img src="{% static 'imagens/resultado.png' %}" alt="Resultado">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
-                        <div class="col-xl-3">
-                            <div class="resumo-lateral-stack h-100">
+                        <div class="resumo-lateral-stack">
 
-                                <div class="faixa-resumo faixa-1">
-                                    <div class="faixa-icone">
-                                        <img src="{% static 'imagens/cifrao.png' %}" alt="Media Recebimento Mensal">
-                                    </div>
-                                    <div class="faixa-texto">
-                                        <span class="label">Media Recebimento Mensal</span>
-                                        <span class="valor">{{ kpis.media_recebimento_mensal }}</span>
-                                    </div>
+                            <div class="faixa-resumo faixa-1">
+                                <div class="faixa-icone">
+                                    <img src="{% static 'imagens/cifrao.png' %}" alt="Media Recebimento Mensal">
                                 </div>
-
-                                <div class="faixa-resumo faixa-2">
-                                    <div class="faixa-icone">
-                                        <img src="{% static 'imagens/crescimento.png' %}" alt="Media Resultado Mensal">
-                                    </div>
-                                    <div class="faixa-texto">
-                                        <span class="label">Media Resultado Mensal</span>
-                                        <span class="valor">{{ kpis.media_resultado_mensal }}</span>
-                                    </div>
+                                <div class="faixa-texto">
+                                    <span class="label">Media Recebimento Mensal</span>
+                                    <span class="valor">{{ kpis.media_recebimento_mensal }}</span>
                                 </div>
-
                             </div>
+
+                            <div class="faixa-resumo faixa-2">
+                                <div class="faixa-icone">
+                                    <img src="{% static 'imagens/crescimento.png' %}" alt="Media Resultado Mensal">
+                                </div>
+                                <div class="faixa-texto">
+                                    <span class="label">Media Resultado Mensal</span>
+                                    <span class="valor">{{ kpis.media_resultado_mensal }}</span>
+                                </div>
+                            </div>
+
                         </div>
 
                     </div>

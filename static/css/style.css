@@ -135,6 +135,145 @@ body {
     color: #ffffff;
 }
 
+[data-bs-theme="dark"] .radio-visao-geral .form-check-label {
+    color: #b8c7d1;
+}
+
+[data-bs-theme="dark"] .radio-visao-geral .form-check-input {
+    border-color: #77909f;
+}
+
+[data-bs-theme="dark"] .radio-visao-geral .form-check-input:checked {
+    background-color: #43c6b8;
+    border-color: #43c6b8;
+}
+
+[data-bs-theme="dark"] .kpi-titulo {
+    color: #43c6b8;
+}
+
+[data-bs-theme="dark"] .kpi-valor {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .valor-negativo {
+    color: #ff6673 !important;
+}
+
+[data-bs-theme="dark"] .card-grafico {
+    border-color: #355064;
+}
+
+[data-bs-theme="dark"] .grafico-legenda,
+[data-bs-theme="dark"] .visao-grafico-valor,
+[data-bs-theme="dark"] .visao-grafico-rotulo,
+[data-bs-theme="dark"] .visao-grafico-ano {
+    color: #b8c7d1;
+}
+
+[data-bs-theme="dark"] .legenda-recebimentos,
+[data-bs-theme="dark"] .visao-grafico-barra {
+    background: #24a8a1;
+}
+
+[data-bs-theme="dark"] .legenda-pagamentos,
+[data-bs-theme="dark"] .visao-grafico-barra-pagamentos {
+    background: #f07178;
+}
+
+[data-bs-theme="dark"] .visao-grafico-tempo,
+[data-bs-theme="dark"] .visao-grafico-margem {
+    border-bottom-color: #355064;
+}
+
+[data-bs-theme="dark"] .visao-tempo-fullscreen-panel:fullscreen,
+[data-bs-theme="dark"] .visao-tempo-fullscreen-panel.visao-tempo-fullscreen-fallback {
+    background: #17232e;
+}
+
+[data-bs-theme="dark"] .tabela-ranking thead th,
+[data-bs-theme="dark"] .tabela-dre-projetado td:first-child,
+[data-bs-theme="dark"] .tabela-fluxo-caixa td:first-child {
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .ranking-clientes .tabela-ranking tbody tr:nth-child(even) td,
+[data-bs-theme="dark"] .ranking-fornecedores .tabela-ranking tbody tr:nth-child(even) td,
+[data-bs-theme="dark"] .tabela-dre .linha-pai td,
+[data-bs-theme="dark"] .tabela-dre .linha-categoria td,
+[data-bs-theme="dark"] .tabela-dre .linha-cliente-fornecedor td,
+[data-bs-theme="dark"] .tabela-dre .linha-resultado td {
+    background-color: #1d303e;
+}
+
+[data-bs-theme="dark"] .dre-projetado-grafico-titulo,
+[data-bs-theme="dark"] .dre-grafico-metrica-label,
+[data-bs-theme="dark"] .dre-grafico-coluna-valor,
+[data-bs-theme="dark"] .dre-grafico-coluna-rotulo,
+[data-bs-theme="dark"] .dre-projetado-point-label,
+[data-bs-theme="dark"] .dre-projetado-mes-label {
+    color: #b8c7d1;
+    fill: #b8c7d1;
+}
+
+[data-bs-theme="dark"] .dre-projetado-grid-line,
+[data-bs-theme="dark"] .dre-projetado-axis {
+    stroke: #355064;
+}
+
+[data-bs-theme="dark"] .dre-projetado-analisar {
+    background: #1d303e;
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .dre-projetado-analisar select {
+    background-color: #101820;
+    border-color: #355064;
+    color: #e6edf2;
+}
+
+[data-bs-theme="dark"] .fluxo-kpis .kpi-titulo {
+    color: #b8c7d1;
+}
+
+[data-bs-theme="dark"] .fluxo-kpis .kpi-valor {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .tabela-fluxo-caixa thead th {
+    background: #1d303e;
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .tabela-fluxo-caixa tfoot td,
+[data-bs-theme="dark"] .tabela-fluxo-caixa tfoot td:first-child {
+    background: #19362f;
+    color: #d8f3e8;
+}
+
+[data-bs-theme="dark"] .tabela-fluxo-caixa .fluxo-linha-receita.linha-pai td,
+[data-bs-theme="dark"] .tabela-fluxo-caixa .fluxo-linha-receita.linha-filho td:first-child {
+    color: #63bce9;
+}
+
+[data-bs-theme="dark"] .tabela-fluxo-caixa .fluxo-linha-despesa.linha-pai td,
+[data-bs-theme="dark"] .tabela-fluxo-caixa .fluxo-linha-despesa.linha-filho td:first-child {
+    color: #ff8088;
+}
+
+[data-bs-theme="dark"] .dre-acoes-nivel .btn,
+[data-bs-theme="dark"] .dre-fullscreen-btn,
+[data-bs-theme="dark"] .dre-row-toggle {
+    background: #1d303e;
+    border-color: #4f6a7c;
+    color: #b8e6e2;
+}
+
+[data-bs-theme="dark"] .dre-fullscreen-panel:fullscreen,
+[data-bs-theme="dark"] .dre-fullscreen-panel.dre-fullscreen-fallback {
+    background: #17232e;
+}
+
 /* =========================
    HOME / CARDS DE EMPRESA
 ========================= */
@@ -332,6 +471,22 @@ body {
     background-color: #0b6166;
     color: #fff;
     border-color: #0b6166;
+}
+
+.empresa-sidebar-brand {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: 74px;
+    margin-bottom: 14px;
+    padding: 4px;
+}
+
+.empresa-sidebar-logo {
+    display: block;
+    max-height: 66px;
+    max-width: 100%;
+    object-fit: contain;
 }
 
 .parametro-grupo-link {
@@ -673,6 +828,19 @@ body {
     min-width: 0;
 }
 
+.visao-geral-kpis {
+    align-items: center;
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 3fr) minmax(230px, 0.84fr);
+}
+
+.visao-geral-kpis-principais {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .visao-geral-graficos {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -697,18 +865,39 @@ body {
 }
 
 .visao-geral-layout .card-kpi .card-body {
+    align-items: center;
     min-height: 100px;
+    padding-left: 22px;
+    padding-right: 22px;
 }
 
 .visao-geral-layout .faixa-resumo {
     border-radius: 12px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-    min-height: 50px;
+    min-height: 44px;
 }
 
 .visao-geral-layout .faixa-icone {
-    flex-basis: 78px;
-    width: 78px;
+    flex-basis: 66px;
+    width: 66px;
+}
+
+.visao-geral-layout .faixa-icone img {
+    height: 26px;
+    width: 26px;
+}
+
+.visao-geral-layout .faixa-texto {
+    padding: 8px 12px;
+}
+
+.visao-geral-layout .faixa-texto .label {
+    font-size: 11px;
+}
+
+.visao-geral-layout .faixa-texto .valor {
+    font-size: 13px;
+    margin-top: 4px;
 }
 
 .grafico-legenda {
@@ -903,12 +1092,26 @@ body {
 }
 
 @media (max-width: 1199.98px) {
+    .visao-geral-kpis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resumo-lateral-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: auto;
+    }
+
     .visao-geral-graficos {
         grid-template-columns: minmax(0, 1fr);
     }
 }
 
 @media (max-width: 767.98px) {
+    .visao-geral-kpis-principais,
+    .resumo-lateral-stack {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .visao-grafico-tempo,
     .visao-grafico-margem {
         gap: 18px;
