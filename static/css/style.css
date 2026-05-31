@@ -10,6 +10,131 @@ body {
     background-color: #0d2c5a !important;
 }
 
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 31px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.theme-toggle-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: inset -4px -2px 0 0 #0d2c5a;
+}
+
+[data-bs-theme="dark"] body {
+    background-color: #101820;
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .navbar.bg-primary {
+    background-color: #07131f !important;
+}
+
+[data-bs-theme="dark"] .theme-toggle-btn {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .theme-toggle-icon {
+    box-shadow: inset 0 0 0 3px #07131f;
+}
+
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .modal-content,
+[data-bs-theme="dark"] .painel-topo {
+    background-color: #17232e !important;
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .modal-content,
+[data-bs-theme="dark"] .painel-topo,
+[data-bs-theme="dark"] .parametro-grupo-card {
+    border-color: #273746 !important;
+}
+
+[data-bs-theme="dark"] .text-muted,
+[data-bs-theme="dark"] .form-text {
+    color: #9cadb8 !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #101820;
+    border-color: #334657;
+    color: #e6edf2;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: #101820;
+    border-color: #5aa7b0;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(90, 167, 176, 0.18);
+}
+
+[data-bs-theme="dark"] .table,
+[data-bs-theme="dark"] .table-hover,
+[data-bs-theme="dark"] .table-light {
+    --bs-table-bg: #17232e;
+    --bs-table-color: #dbe4ea;
+    --bs-table-border-color: #273746;
+    --bs-table-hover-bg: #1e2d39;
+    --bs-table-hover-color: #ffffff;
+}
+
+[data-bs-theme="dark"] .table-light th,
+[data-bs-theme="dark"] thead.table-light th {
+    background-color: #1e2d39 !important;
+    color: #f1f6f9;
+}
+
+[data-bs-theme="dark"] .menu-btn {
+    background: #22303c;
+    color: #dbe4ea;
+}
+
+[data-bs-theme="dark"] .menu-btn:hover,
+[data-bs-theme="dark"] .menu-btn.active {
+    background-color: #0b6166;
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .titulo-toggle,
+[data-bs-theme="dark"] .parametro-grupo-tag {
+    background: #102c33;
+    border-color: #26434b;
+    color: #9de3d4;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #cbd7df;
+    border-color: #667887;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #2d3d4a;
+    border-color: #7f93a3;
+    color: #ffffff;
+}
+
 /* =========================
    HOME / CARDS DE EMPRESA
 ========================= */
