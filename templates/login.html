@@ -4,35 +4,60 @@
 {% block nav %}{% endblock %}
 
 {% block content %}
-<div class="auth-page">
-    <section class="auth-panel">
-        <h1>Acesse o <strong>DataWise BI</strong></h1>
-        <p class="auth-subtitle">Acesse sua conta para continuar acompanhando seus dashboards.</p>
+<div class="auth-page login-page">
+    <div class="login-shell">
+        <section class="login-brand-panel" aria-label="Insight Wise Business Intelligence">
+            <img src="/media/wise-logo2.png" alt="Insight Wise B.I. - Business Intelligence" class="login-brand-logo">
+        </section>
 
-        <form method="post" class="auth-form">
-            {% csrf_token %}
+        <section class="login-card">
+            <div class="login-card-shine"></div>
+            <h1>Bem-vindo de volta!</h1>
+            <p class="auth-subtitle">Faca login para acessar sua conta</p>
 
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
+            <form method="post" class="auth-form login-form">
+                {% csrf_token %}
 
-            {{ form.email }}
-            {{ form.password }}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
 
-            <div class="auth-actions-row">
-                <label class="auth-remember">
-                    {{ form.remember_me }}
-                    <span>Lembrar senha</span>
+                <label class="login-field">
+                    <span>E-mail</span>
+                    <span class="login-field-control">
+                        <span class="login-field-icon" aria-hidden="true">@</span>
+                        {{ form.email }}
+                    </span>
                 </label>
-                <a href="{% url 'esqueci_senha' %}" class="auth-link">Esqueceu a senha?</a>
-            </div>
 
-            <button type="submit" class="auth-submit">Log In</button>
-        </form>
+                <label class="login-field">
+                    <span>Senha</span>
+                    <span class="login-field-control">
+                        <span class="login-field-icon" aria-hidden="true">&#9906;</span>
+                        {{ form.password }}
+                    </span>
+                </label>
 
-        <a href="{% url 'cadastro_usuario' %}" class="auth-register-link">Ou cadastre-se</a>
-    </section>
+                <div class="auth-actions-row">
+                    <label class="auth-remember">
+                        {{ form.remember_me }}
+                        <span>Lembrar acesso</span>
+                    </label>
+                    <a href="{% url 'esqueci_senha' %}" class="auth-link">Esqueceu sua senha?</a>
+                </div>
+
+                <button type="submit" class="auth-submit login-submit">
+                    <span>Entrar</span>
+                    <span aria-hidden="true">-&gt;</span>
+                </button>
+            </form>
+
+            <div class="login-divider"><span>ou continue com</span></div>
+            <a href="{% url 'cadastro_usuario' %}" class="login-secondary-action">Criar conta</a>
+            <p class="login-secure-note">Seus dados estao protegidos</p>
+        </section>
+    </div>
 </div>
 {% endblock %}
