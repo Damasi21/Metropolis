@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Login | Metrópolis{% endblock %}
 {% block nav %}{% endblock %}
@@ -7,7 +8,7 @@
 <div class="auth-page login-page">
     <div class="login-shell">
         <section class="login-brand-panel" aria-label="Insight Wise Business Intelligence">
-            <img src="/media/wise-logo2.png" alt="Insight Wise B.I. - Business Intelligence" class="login-brand-logo">
+            <img src="{% static 'imagens/wise-logo2.png' %}" alt="Insight Wise B.I. - Business Intelligence" class="login-brand-logo">
         </section>
 
         <section class="login-card">
