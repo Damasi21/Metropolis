@@ -773,6 +773,385 @@ body {
     }
 }
 
+/* Login final */
+.auth-page.login-page {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    margin: -1.5rem -12px;
+    padding: clamp(22px, 4vw, 56px);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 18% 22%, rgba(31, 235, 210, 0.28), transparent 30%),
+        radial-gradient(circle at 82% 76%, rgba(100, 119, 255, 0.24), transparent 28%),
+        linear-gradient(90deg, rgba(26, 161, 208, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(26, 161, 208, 0.08) 1px, transparent 1px),
+        linear-gradient(135deg, #020608 0%, #071825 48%, #10283f 100%);
+    background-size: auto, auto, 72px 72px, 72px 72px, auto;
+    color: #ffffff;
+}
+
+.auth-page.login-page::before {
+    display: block;
+    background:
+        linear-gradient(118deg, rgba(2, 6, 8, 0.88), rgba(7, 24, 37, 0.2) 45%, rgba(2, 6, 8, 0.82)),
+        radial-gradient(ellipse at 78% 58%, rgba(31, 235, 210, 0.14), transparent 34%);
+    opacity: 1;
+}
+
+.auth-page.login-page::after {
+    display: none;
+}
+
+.login-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(380px, 1.15fr) minmax(360px, 460px);
+    align-items: center;
+    gap: clamp(28px, 5vw, 74px);
+    width: min(100%, 1220px);
+    min-height: min(680px, calc(100vh - 84px));
+    margin: 0 auto;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.login-brand-panel {
+    position: relative;
+    display: flex;
+    min-height: 520px;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(16px, 3vw, 44px);
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    isolation: isolate;
+}
+
+.login-brand-panel::before,
+.login-brand-panel::after {
+    display: none;
+}
+
+.login-brand-logo {
+    display: block;
+    width: min(88%, 560px);
+    max-height: 560px;
+    margin: 0;
+    border-radius: 30px;
+    object-fit: contain;
+    box-shadow:
+        0 0 58px rgba(31, 235, 210, 0.24),
+        0 28px 74px rgba(0, 0, 0, 0.46);
+    filter: brightness(1.12) contrast(1.04) saturate(1.04);
+}
+
+.login-card {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 520px;
+    flex-direction: column;
+    justify-content: center;
+    align-self: center;
+    padding: clamp(32px, 4vw, 52px);
+    overflow: hidden;
+    border: 1px solid rgba(232, 250, 255, 0.22);
+    border-radius: 22px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(153, 231, 221, 0.22)),
+        rgba(52, 70, 88, 0.26);
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    backdrop-filter: blur(18px);
+}
+
+.login-card-shine {
+    display: block;
+    position: absolute;
+    top: -1px;
+    left: 18%;
+    width: 64%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(31, 235, 210, 0.92), transparent);
+    box-shadow: 0 0 18px 3px rgba(31, 235, 210, 0.5);
+}
+
+.login-card-brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 28px;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.login-card-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 2px solid rgba(255, 255, 255, 0.86);
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.login-card h1 {
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 800;
+    line-height: 1.12;
+    text-align: center;
+}
+
+.login-card .auth-subtitle {
+    max-width: none;
+    margin: 0 0 30px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.login-form,
+.login-page .auth-actions-row,
+.login-submit {
+    width: min(100%, 360px);
+}
+
+.login-form {
+    margin: 0 auto;
+    gap: 18px;
+}
+
+.login-field {
+    display: grid;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.login-field-control {
+    display: flex;
+    min-height: 50px;
+    align-items: center;
+    border: 1px solid rgba(232, 250, 255, 0.25);
+    border-radius: 12px;
+    background: rgba(232, 250, 255, 0.12);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.login-field-control:focus-within {
+    border-color: rgba(31, 235, 210, 0.8);
+    background: rgba(232, 250, 255, 0.16);
+    box-shadow: 0 0 0 4px rgba(31, 235, 210, 0.12);
+}
+
+.login-field-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 50px;
+    color: #ffffff;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.login-page .auth-input {
+    height: 50px;
+    padding: 0 16px 0 0;
+    border: 0;
+    background: transparent;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.login-page .auth-input:focus {
+    border: 0;
+}
+
+.login-page .auth-input::placeholder {
+    color: rgba(255, 255, 255, 0.54);
+}
+
+.login-page .senha-toggle-wrap {
+    flex: 1 1 auto;
+}
+
+.login-page .senha-toggle-wrap .auth-input {
+    padding-right: 48px;
+}
+
+.login-page .senha-toggle-btn {
+    right: 10px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.login-page .senha-toggle-btn:hover,
+.login-page .senha-toggle-btn.senha-visivel {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.login-page .auth-actions-row {
+    align-items: center;
+    margin: -2px auto 0;
+}
+
+.login-page .auth-remember,
+.login-page .auth-link,
+.login-signup-text,
+.login-signup-text a {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.login-page .auth-remember {
+    gap: 9px;
+    font-size: 13px;
+}
+
+.login-page .auth-link {
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.login-page .auth-link:hover,
+.login-signup-text a:hover {
+    color: #ffffff;
+}
+
+.login-page .auth-check-input {
+    width: 16px;
+    height: 16px;
+    border-color: rgba(255, 255, 255, 0.46);
+    accent-color: #1febd2;
+}
+
+.login-submit {
+    display: inline-flex;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 14px auto 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6477ff, #8a3fb5);
+    box-shadow: 0 18px 36px rgba(72, 55, 183, 0.32);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.login-submit:hover {
+    background: linear-gradient(135deg, #7284ff, #9a4eca);
+}
+
+.login-divider,
+.login-secondary-action,
+.login-secure-note,
+.login-service-row {
+    display: none;
+}
+
+.login-signup-text {
+    margin: 22px auto 0;
+    font-size: 13px;
+    text-align: center;
+}
+
+.login-signup-text a {
+    font-weight: 800;
+    text-decoration: none;
+}
+
+@media (max-width: 900px) {
+    .auth-page.login-page {
+        padding: 22px 16px 30px;
+    }
+
+    .login-shell {
+        grid-template-columns: 1fr;
+        gap: 22px;
+        min-height: auto;
+    }
+
+    .login-brand-panel {
+        min-height: auto;
+        padding: 8px 16px 0;
+    }
+
+    .login-brand-logo {
+        width: min(72%, 340px);
+        max-height: 340px;
+        border-radius: 24px;
+    }
+
+    .login-card {
+        width: min(100%, 460px);
+        min-height: auto;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .auth-page.login-page {
+        min-height: calc(100vh - 2rem);
+        padding: 18px 12px 24px;
+    }
+
+    .login-shell {
+        gap: 18px;
+    }
+
+    .login-brand-logo {
+        width: min(86%, 260px);
+        border-radius: 20px;
+    }
+
+    .login-card {
+        padding: 28px 18px;
+        border-radius: 18px;
+    }
+
+    .login-card-brand {
+        margin-bottom: 20px;
+        font-size: 19px;
+    }
+
+    .login-card-brand-mark {
+        width: 38px;
+        height: 38px;
+    }
+
+    .login-card h1 {
+        font-size: 25px;
+    }
+
+    .login-card .auth-subtitle {
+        margin-bottom: 26px;
+        font-size: 14px;
+    }
+
+    .login-page .auth-actions-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
 .senha-toggle-wrap {
     position: relative;
 }
