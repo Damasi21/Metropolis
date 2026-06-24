@@ -8,18 +8,14 @@
 <div class="auth-page login-page">
     <div class="login-shell">
         <section class="login-brand-panel" aria-label="Insight Wise Business Intelligence">
-            <img src="{% static 'imagens/data-wise-new.png' %}?v=20260610" alt="Insight Wise B.I. - Business Intelligence" class="login-brand-logo">
+            <img src="/media/data_wise_new.png" alt="Insight Wise B.I. - Business Intelligence" class="login-brand-logo">
+            <div class="login-brand-copy">
+            </div>
         </section>
 
         <section class="login-card">
-            <div class="login-card-shine"></div>
-            <div class="login-card-brand" aria-label="Insight Wise">
-                <span class="login-card-brand-mark">IW</span>
-                <span>Insight Wise</span>
-            </div>
-
-            <h1>Acesse sua conta</h1>
-            <p class="auth-subtitle">Sistema de BI e Gestao Financeira</p>
+            <h2>Acesse sua conta</h2>
+            <p class="auth-subtitle">Entre para acessar seus dashboards</p>
 
             <form method="post" class="auth-form login-form">
                 {% csrf_token %}
@@ -56,7 +52,6 @@
 
                 <button type="submit" class="auth-submit login-submit">
                     <span>Entrar</span>
-                    <span aria-hidden="true">-&gt;</span>
                 </button>
             </form>
 

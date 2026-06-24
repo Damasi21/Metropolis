@@ -11,6 +11,7 @@ from openpyxl import Workbook, load_workbook
 from .models import (
     Categoria,
     ClienteFornecedor,
+    ContaCorrente,
     ContaPagar,
     ContaReceber,
     ContaDRE,
@@ -966,6 +967,44 @@ class FluxoCaixaViewTestCase(TestCase):
 
         self.assertEqual(resultado_fluxo[0]['previsto'], 'R$ 1.000,00')
         self.assertEqual(resultado_fluxo[0]['realizado'], 'R$ 700,00')
+
+    def test_saldo_inicial_por_conta_corrente_aparece_antes_das_receitas(self):
+        empresa = ParametroEmpresa.objects.create(
+            slug_empresa='empresa-fluxo-saldo',
+            nome_empresa='Empresa Fluxo Saldo',
+        )
+        Categoria.objects.create(codigo='1.01', descricao='Receitas')
+        categoria_receita = Categoria.objects.create(
+            codigo='1.01.01',
+            descricao='Venda de Produtos',
+            categoria_superior='1.01',
+        )
+        ContaCorrente.objects.create(
+            nCodCC=10,
+            descricao='Banco Teste',
+            saldo_inicial=Decimal('1000.00'),
+        )
+        ContaReceber.objects.create(
+            codigo_lancamento_omie=10,
+            codigo_categoria=categoria_receita.codigo,
+            id_conta_corrente=10,
+            data_vencimento=date(2026, 1, 10),
+            valor_documento=Decimal('200.00'),
+        )
+
+        fluxo, resultado_fluxo = _montar_linhas_fluxo_caixa(empresa, [
+            {'codigo': '2026-01', 'ano': 2026, 'mes': 1, 'rotulo': 'Janeiro'},
+            {'codigo': '2026-02', 'ano': 2026, 'mes': 2, 'rotulo': 'Fevereiro'},
+        ])
+
+        self.assertEqual(fluxo[0]['nome'], 'Saldo inicial')
+        self.assertTrue(fluxo[0]['expandido'])
+        self.assertEqual(fluxo[1]['nome'], 'Banco Teste')
+        self.assertTrue(fluxo[1]['visivel_inicial'])
+        self.assertEqual(fluxo[0]['meses'][0]['realizado'], 'R$ 1.000,00')
+        self.assertEqual(fluxo[0]['meses'][1]['realizado'], 'R$ 1.200,00')
+        self.assertEqual(resultado_fluxo[0]['realizado'], 'R$ 1.200,00')
+        self.assertEqual(resultado_fluxo[1]['realizado'], 'R$ 1.200,00')
 
 
 class OmieContasCorrentesListagemTestCase(TestCase):
