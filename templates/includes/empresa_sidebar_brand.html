@@ -1,7 +1,19 @@
-{% if empresa_logo_url %}
-    <div class="empresa-sidebar-brand">
-        <img src="{{ empresa_logo_url }}" alt="{{ empresa_nome }}" class="empresa-sidebar-logo">
-    </div>
-{% else %}
-    <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
-{% endif %}
+<div class="empresa-sidebar-header">
+    <button
+        type="button"
+        class="dashboard-sidebar-toggle"
+        id="dashboardSidebarToggle"
+        aria-label="Encolher menu lateral"
+        title="Encolher menu lateral"
+    >
+        <span class="dashboard-sidebar-toggle-icon" aria-hidden="true"></span>
+    </button>
+
+    {% if empresa_logo_url %}
+        <div class="empresa-sidebar-brand">
+            <img src="{{ empresa_logo_url }}" alt="{{ empresa_nome }}" class="empresa-sidebar-logo">
+        </div>
+    {% else %}
+        <h5 class="fw-bold mb-3">{{ empresa_nome }}</h5>
+    {% endif %}
+</div>

@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Inicializa os comportamentos globais do dashboard quando a tela termina de carregar.
     inicializarMenuLateral();
+    inicializarSidebarDashboard();
     inicializarModalExclusao();
     inicializarModalMensagem();
     inicializarTema();
@@ -23,6 +24,53 @@ function inicializarMenuLateral() {
 
             btn.classList.add('active');
         });
+    });
+}
+
+function inicializarSidebarDashboard() {
+    const layout = document.querySelector('.dashboard-layout');
+    const toggle = document.getElementById('dashboardSidebarToggle');
+
+    if (!layout || !toggle) {
+        return;
+    }
+
+    const storageKey = 'metropolis-dashboard-sidebar-collapsed';
+    const labelsCurtos = {
+        'Visao Geral': 'VG',
+        'Visão Geral': 'VG',
+        'Resultado': 'R',
+        'DRE vs Projetado': 'DRE',
+        'Fluxo de Caixa': 'FC',
+        'Parametros': 'P',
+        'Parâmetros': 'P',
+    };
+
+    layout.querySelectorAll('.menu-btn').forEach(function (btn) {
+        const label = btn.textContent.trim();
+        btn.dataset.shortLabel = labelsCurtos[label] || label.slice(0, 2).toUpperCase();
+        if (!btn.getAttribute('title')) {
+            btn.setAttribute('title', label);
+        }
+        if (!btn.getAttribute('aria-label')) {
+            btn.setAttribute('aria-label', label);
+        }
+    });
+
+    function aplicarEstado(colapsado) {
+        layout.classList.toggle('sidebar-collapsed', colapsado);
+        toggle.setAttribute('aria-expanded', colapsado ? 'false' : 'true');
+        toggle.setAttribute('aria-label', colapsado ? 'Expandir menu lateral' : 'Encolher menu lateral');
+        toggle.setAttribute('title', colapsado ? 'Expandir menu lateral' : 'Encolher menu lateral');
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    aplicarEstado(localStorage.getItem(storageKey) === 'true');
+
+    toggle.addEventListener('click', function () {
+        const colapsado = !layout.classList.contains('sidebar-collapsed');
+        localStorage.setItem(storageKey, colapsado ? 'true' : 'false');
+        aplicarEstado(colapsado);
     });
 }
 

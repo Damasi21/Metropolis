@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
+    <div class="row dashboard-layout">
 
-        <aside class="col-md-2 mb-4">
+        <aside class="dashboard-sidebar col-md-2 mb-4">
             <div class="bg-white shadow-sm rounded p-3">
                 {% include 'includes/empresa_sidebar_brand.html' %}
 
@@ -15,13 +15,12 @@
                     <a href="{% url 'dashboard_resultado' slug=slug %}" class="btn menu-btn">Resultado</a>
                     <a href="{% url 'dashboard_dre_projetado' slug=slug %}" class="btn menu-btn">DRE vs Projetado</a>
                     <a href="{% url 'dashboard_fluxo_caixa' slug=slug %}" class="btn menu-btn">Fluxo de Caixa</a>
-                    <a href="#" class="btn menu-btn">Clientes</a>
                     <a href="{% url 'parametros_empresa' slug=slug %}" class="btn menu-btn active">Parâmetros</a>
                 </div>
             </div>
         </aside>
 
-        <section class="col-md-10">
+        <section class="dashboard-content col-md-10">
             <div class="bg-white shadow-sm rounded p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                     <div>

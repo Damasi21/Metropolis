@@ -25,6 +25,7 @@ from .models import (
     Categoria,
     ClienteFornecedor,
     ComposicaoContaDRE,
+    ContaCorrente,
     ContaPagar,
     ContaReceber,
     ContaDRE,
@@ -1416,6 +1417,40 @@ def _somar_realizado_fluxo(meses_periodo):
     return valores
 
 
+def _somar_movimentos_por_conta_corrente(meses_periodo):
+    valores = {}
+    if not meses_periodo:
+        return valores
+
+    data_inicial, data_final = _limites_periodo_meses(meses_periodo)
+    meses_validos = {mes['codigo'] for mes in meses_periodo}
+
+    for modelo, multiplicador in ((ContaReceber, 1), (ContaPagar, -1)):
+        queryset = (
+            modelo.objects.filter(data_vencimento__gte=data_inicial, data_vencimento__lte=data_final)
+            .exclude(valor_documento__isnull=True)
+            .exclude(id_conta_corrente__isnull=True)
+            .only('data_vencimento', 'id_conta_corrente', 'valor_documento')
+        )
+
+        for movimento in queryset.iterator():
+            if not movimento.data_vencimento:
+                continue
+
+            codigo_mes = f'{movimento.data_vencimento.year}-{movimento.data_vencimento.month:02d}'
+            if codigo_mes not in meses_validos:
+                continue
+
+            valores.setdefault(movimento.id_conta_corrente, _inicializar_valores_periodo(meses_periodo))
+            valores[movimento.id_conta_corrente][codigo_mes] = round(
+                valores[movimento.id_conta_corrente][codigo_mes]
+                + (float(movimento.valor_documento or 0) * multiplicador),
+                2,
+            )
+
+    return valores
+
+
 def _media_dias_fluxo(modelo, data_inicio, data_fim):
     dias = []
     queryset = modelo.objects.filter(
@@ -1456,6 +1491,7 @@ def _montar_linhas_fluxo_caixa(empresa, meses_periodo):
     categorias_por_codigo = {item['obj'].codigo: item['obj'] for item in categorias}
     previstas_por_categoria = _somar_previsto_fluxo(empresa, meses_periodo)
     realizadas_por_codigo = _somar_realizado_fluxo(meses_periodo)
+    movimentos_por_conta = _somar_movimentos_por_conta_corrente(meses_periodo)
     linhas = []
     resultado_previsto = _inicializar_valores_periodo(meses_periodo)
     resultado_realizado = _inicializar_valores_periodo(meses_periodo)
@@ -1474,6 +1510,15 @@ def _montar_linhas_fluxo_caixa(empresa, meses_periodo):
             'realizado': _formatar_moeda(realizado[mes['codigo']] * multiplicador),
         } for mes in meses_periodo]
 
+    def montar_meses_sem_multiplicador(previsto, realizado):
+        return [{
+            'rotulo': mes['rotulo'],
+            'mes': mes['mes'],
+            'ano': mes['ano'],
+            'previsto': _formatar_moeda(previsto[mes['codigo']]),
+            'realizado': _formatar_moeda(realizado[mes['codigo']]),
+        } for mes in meses_periodo]
+
     def somar_valores(destino, origem):
         for codigo in destino.keys():
             destino[codigo] = round(destino[codigo] + origem.get(codigo, 0), 2)
@@ -1488,6 +1533,59 @@ def _montar_linhas_fluxo_caixa(empresa, meses_periodo):
                 resultado_realizado[codigo] + (realizado.get(codigo, 0) * multiplicador),
                 2,
             )
+
+    contas_correntes = (
+        ContaCorrente.objects
+        .filter(Q(inativo__isnull=True) | Q(inativo='') | Q(inativo='N'))
+        .filter(Q(nao_fluxo__isnull=True) | Q(nao_fluxo='') | Q(nao_fluxo='N'))
+        .order_by('descricao', 'nCodCC')
+    )
+    saldo_previsto_total = _inicializar_valores_periodo(meses_periodo)
+    saldo_realizado_total = _inicializar_valores_periodo(meses_periodo)
+    linhas_saldo_inicial = []
+
+    for conta in contas_correntes:
+        saldo_atual = float(conta.saldo_inicial or 0)
+        saldo_previsto_conta = _inicializar_valores_periodo(meses_periodo)
+        saldo_realizado_conta = _inicializar_valores_periodo(meses_periodo)
+        movimentos_conta = movimentos_por_conta.get(conta.nCodCC, {})
+
+        for mes in meses_periodo:
+            codigo_mes = mes['codigo']
+            saldo_previsto_conta[codigo_mes] = round(saldo_atual, 2)
+            saldo_realizado_conta[codigo_mes] = round(saldo_atual, 2)
+            saldo_previsto_total[codigo_mes] = round(saldo_previsto_total[codigo_mes] + saldo_atual, 2)
+            saldo_realizado_total[codigo_mes] = round(saldo_realizado_total[codigo_mes] + saldo_atual, 2)
+            saldo_atual = round(saldo_atual + movimentos_conta.get(codigo_mes, 0), 2)
+
+        linhas_saldo_inicial.append({
+            'id': f'fluxo-saldo-inicial-{conta.nCodCC}',
+            'parent_id': 'fluxo-saldo-inicial',
+            'nivel': 2,
+            'tipo': 'saldo-inicial',
+            'nome': conta.descricao or f'Conta corrente {conta.nCodCC}',
+            'codigo': conta.nCodCC,
+            'meses': montar_meses_sem_multiplicador(saldo_previsto_conta, saldo_realizado_conta),
+            'possui_filhos': False,
+            'expandido': False,
+            'visivel_inicial': True,
+        })
+
+    if linhas_saldo_inicial:
+        somar_resultado(saldo_previsto_total, saldo_realizado_total, 1)
+        linhas.append({
+            'id': 'fluxo-saldo-inicial',
+            'parent_id': '',
+            'nivel': 1,
+            'tipo': 'saldo-inicial',
+            'nome': 'Saldo inicial',
+            'codigo': '',
+            'meses': montar_meses_sem_multiplicador(saldo_previsto_total, saldo_realizado_total),
+            'possui_filhos': True,
+            'expandido': True,
+            'visivel_inicial': True,
+        })
+        linhas.extend(linhas_saldo_inicial)
 
     pais = [item['obj'] for item in categorias if item['eh_pai']]
     pais_codigos = {pai.codigo for pai in pais}
